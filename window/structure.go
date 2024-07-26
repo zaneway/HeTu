@@ -15,11 +15,18 @@ func Structure() *fyne.Container {
 	inputCertEntry := buildInputCertEntry("please input base64/hex cert")
 	confirm := buildButton("确认", func() {
 		inputCert := inputCertEntry.Text
+
 		decodeCert, err := base64.StdEncoding.DecodeString(inputCert)
 		if err != nil {
-			fyne.LogError("Error decoding base64 cert", err)
+			fyne.LogError("解析请求错误", err)
+			return
 		}
-		certificate := cert.ParseCertificate(decodeCert)
+		//MIICETCCAbWgAwIBAgINKl81oFaaablKOp0YTjAMBggqgRzPVQGDdQUAMGExCzAJBgNVBAYMAkNOMQ0wCwYDVQQKDARCSkNBMSUwIwYDVQQLDBxCSkNBIEFueXdyaXRlIFRydXN0IFNlcnZpY2VzMRwwGgYDVQQDDBNUcnVzdC1TaWduIFNNMiBDQS0xMB4XDTIwMDgxMzIwMTkzNFoXDTIwMTAyNDE1NTk1OVowHjELMAkGA1UEBgwCQ04xDzANBgNVBAMMBuWGr+i9rDBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABAIF97Sqq0Rv616L2PjFP3xt16QGJLmi+W8Ht+NLHiXntgUey0Nz+ZVnSUKUMzkKuGTikY3h2v7la20b6lpKo8WjgZIwgY8wCwYDVR0PBAQDAgbAMB0GA1UdDgQWBBSxiaS6z4Uguz3MepS2zblkuAF/LTAfBgNVHSMEGDAWgBTMZyRCGsP4rSes0vLlhIEf6cUvrjBABgNVHSAEOTA3MDUGCSqBHIbvMgICAjAoMCYGCCsGAQUFBwIBFhpodHRwOi8vd3d3LmJqY2Eub3JnLmNuL2NwczAMBggqgRzPVQGDdQUAA0gAMEUCIG6n6PG0BOK1EdFcvetQlC+9QhpsTuTui2wkeqWiPKYWAiEAvqR8Z+tSiYR5DIs7SyHJPWZ+sa8brtQL/1jURvHGxU8=
+		certificate, err := cert.ParseCertificate(decodeCert)
+		if err != nil {
+			fyne.LogError("解析证书错误", err)
+			return
+		}
 		inputCertEntry.Text = certificate.Subject
 	})
 	clear := buildButton("清除", func() {
