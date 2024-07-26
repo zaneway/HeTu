@@ -22,9 +22,9 @@ func NewWindow() {
 func newBody() *fyne.Container {
 	// 表头
 	helloGay := widget.NewLabel("欢迎访问全球最大的同性交友网站： https://github.com/zaneway/CertViewer ")
-
 	body := container.NewVBox(
 		helloGay,
+		Structure(),
 		freshTimeSeconds(),
 	)
 	return body
