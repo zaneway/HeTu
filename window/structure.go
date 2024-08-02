@@ -3,6 +3,7 @@ package window
 import (
 	"CertViewer/cert"
 	"encoding/base64"
+	"encoding/hex"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
@@ -30,8 +31,13 @@ func Structure() *fyne.Container {
 			fyne.LogError("解析证书错误", err)
 			return
 		}
+		certDetail["SerialNumber"] = hex.EncodeToString(certificate.SerialNumber.Bytes())
 		certDetail["SubjectName"] = certificate.Subject.String()
 		certDetail["IssueName"] = certificate.Issuer.String()
+		certDetail["NotBefore"] = certificate.NotBefore.String()
+		certDetail["NotAfter"] = certificate.NotAfter.String()
+		certDetail["PublicKey"] = base64.StdEncoding.EncodeToString(certificate.RawSubjectPublicKeyInfo)
+
 		//添加证书详情
 		showCertificateDetail(certDetail, structure)
 	})
