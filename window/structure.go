@@ -13,8 +13,7 @@ import (
 func Structure() *fyne.Container {
 	structure := container.NewVBox()
 	inputCertEntry := buildInputCertEntry("please input base64/hex cert")
-	subjectKey := widget.NewLabel("SubjectName:")
-	subjectValue := widget.NewLabel("")
+	certDetail := make(map[string]string)
 	//确认按钮
 	confirm := buildButton("确认", func() {
 		inputCert := inputCertEntry.Text
@@ -31,9 +30,10 @@ func Structure() *fyne.Container {
 			fyne.LogError("解析证书错误", err)
 			return
 		}
-		subjectValue.Text = certificate.Subject.String()
-
-		structure.Refresh()
+		certDetail["SubjectName"] = certificate.Subject.String()
+		certDetail["IssueName"] = certificate.Issuer.String()
+		//添加证书详情
+		showCertificateDetail(certDetail, structure)
 	})
 	//清除按钮
 	clear := buildButton("清除", func() {
@@ -43,11 +43,20 @@ func Structure() *fyne.Container {
 
 	//对所有按钮进行表格化
 	allButton := container.New(layout.NewGridLayout(2), confirm, clear)
-	subjectName := container.New(layout.NewGridLayout(2), subjectKey, subjectValue)
 	structure.Add(inputCertEntry)
 	structure.Add(allButton)
-	structure.Add(subjectName)
+
 	return structure
+}
+
+func showCertificateDetail(detail map[string]string, box *fyne.Container) {
+	for k, v := range detail {
+		key := widget.NewLabel(k + ":")
+		value := widget.NewLabel(v)
+		line := container.New(layout.NewGridLayout(2), key, value)
+		box.Add(line)
+	}
+	box.Refresh()
 }
 
 func buildInputCertEntry(data string) *widget.Entry {
