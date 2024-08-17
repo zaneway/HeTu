@@ -33,15 +33,17 @@ func Structure() *fyne.Container {
 			fyne.LogError("解析证书错误", err)
 			return
 		}
-		certDetail["SerialNumber"] = hex.EncodeToString(certificate.SerialNumber.Bytes())
-		certDetail["SubjectName"] = certificate.Subject.String()
-		certDetail["IssueName"] = certificate.Issuer.String()
-		certDetail["NotBefore"] = certificate.NotBefore.String()
-		certDetail["NotAfter"] = certificate.NotAfter.String()
-		certDetail["PublicKey"] = base64.StdEncoding.EncodeToString(certificate.RawSubjectPublicKeyInfo)
+		//有序的key放切片，值对应在map
+		keys := []string{"SerialNumber", "SubjectName", "IssueName", "NotBefore", "NotAfter", "PublicKey"}
 
+		certDetail[keys[0]] = hex.EncodeToString(certificate.SerialNumber.Bytes())
+		certDetail[keys[1]] = certificate.Subject.String()
+		certDetail[keys[2]] = certificate.Issuer.String()
+		certDetail[keys[3]] = certificate.NotBefore.String()
+		certDetail[keys[4]] = certificate.NotAfter.String()
+		certDetail[keys[5]] = base64.StdEncoding.EncodeToString(certificate.RawSubjectPublicKeyInfo)
 		//添加证书详情
-		showCertificateDetail(certDetail, detail)
+		showCertificateDetail(keys, certDetail, detail)
 	})
 	//清除按钮
 	clear := buildButton("清除", func() {
@@ -58,12 +60,11 @@ func Structure() *fyne.Container {
 }
 
 // 将证书详情以表格的形式添加在最后
-func showCertificateDetail(certDetail map[string]string, box *fyne.Container) {
-
-	for k, v := range certDetail {
-		key := widget.NewLabel(k)
+func showCertificateDetail(orderKeys []string, certDetail map[string]string, box *fyne.Container) {
+	for _, orderKey := range orderKeys {
+		key := widget.NewLabel(orderKey)
 		value := widget.NewEntry()
-		value.SetText(v)
+		value.SetText(certDetail[orderKey])
 		//防止值被修改
 		value.OnChanged = func(s string) {
 			text := certDetail[key.Text]
