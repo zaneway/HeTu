@@ -15,6 +15,7 @@ func Structure() *fyne.Container {
 	structure := container.NewVBox()
 	inputCertEntry := buildInputCertEntry("please input base64/hex cert")
 	certDetail := make(map[string]string)
+	inputCertEntry.Text = "MIICETCCAbWgAwIBAgINKl81oFaaablKOp0YTjAMBggqgRzPVQGDdQUAMGExCzAJBgNVBAYMAkNOMQ0wCwYDVQQKDARCSkNBMSUwIwYDVQQLDBxCSkNBIEFueXdyaXRlIFRydXN0IFNlcnZpY2VzMRwwGgYDVQQDDBNUcnVzdC1TaWduIFNNMiBDQS0xMB4XDTIwMDgxMzIwMTkzNFoXDTIwMTAyNDE1NTk1OVowHjELMAkGA1UEBgwCQ04xDzANBgNVBAMMBuWGr+i9rDBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABAIF97Sqq0Rv616L2PjFP3xt16QGJLmi+W8Ht+NLHiXntgUey0Nz+ZVnSUKUMzkKuGTikY3h2v7la20b6lpKo8WjgZIwgY8wCwYDVR0PBAQDAgbAMB0GA1UdDgQWBBSxiaS6z4Uguz3MepS2zblkuAF/LTAfBgNVHSMEGDAWgBTMZyRCGsP4rSes0vLlhIEf6cUvrjBABgNVHSAEOTA3MDUGCSqBHIbvMgICAjAoMCYGCCsGAQUFBwIBFhpodHRwOi8vd3d3LmJqY2Eub3JnLmNuL2NwczAMBggqgRzPVQGDdQUAA0gAMEUCIG6n6PG0BOK1EdFcvetQlC+9QhpsTuTui2wkeqWiPKYWAiEAvqR8Z+tSiYR5DIs7SyHJPWZ+sa8brtQL/1jURvHGxU8="
 	//确认按钮
 	confirm := buildButton("确认", func() {
 		inputCert := inputCertEntry.Text
@@ -55,11 +56,21 @@ func Structure() *fyne.Container {
 	return structure
 }
 
-func showCertificateDetail(detail map[string]string, box *fyne.Container) {
-	for k, v := range detail {
-		key := widget.NewLabel(k + ":")
-		value := widget.NewLabel(v)
-		line := container.New(layout.NewGridLayout(2), key, value)
+// 将证书详情以表格的形式添加在最后
+func showCertificateDetail(certDetail map[string]string, box *fyne.Container) {
+
+	for k, v := range certDetail {
+		key := widget.NewLabel(k)
+		value := widget.NewEntry()
+		value.SetText(v)
+		//防止值被修改
+		value.OnChanged = func(s string) {
+			text := certDetail[key.Text]
+			value.SetText(text)
+		}
+		realKey := container.New(layout.NewGridWrapLayout(fyne.Size{100, 30}), key)
+		realValue := container.NewStack(value)
+		line := container.New(layout.NewFormLayout(), realKey, realValue)
 		box.Add(line)
 	}
 	box.Refresh()
