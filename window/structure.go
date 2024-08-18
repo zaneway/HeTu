@@ -34,14 +34,15 @@ func Structure() *fyne.Container {
 			return
 		}
 		//有序的key放切片，值对应在map
-		keys := []string{"SerialNumber", "SubjectName", "IssueName", "NotBefore", "NotAfter", "PublicKey"}
-
+		keys := []string{"SerialNumber", "SubjectName", "IssueName", "NotBefore", "NotAfter", "PublicKey", "SignatureAlgorithm"}
 		certDetail[keys[0]] = hex.EncodeToString(certificate.SerialNumber.Bytes())
 		certDetail[keys[1]] = certificate.Subject.String()
 		certDetail[keys[2]] = certificate.Issuer.String()
 		certDetail[keys[3]] = certificate.NotBefore.String()
 		certDetail[keys[4]] = certificate.NotAfter.String()
 		certDetail[keys[5]] = base64.StdEncoding.EncodeToString(certificate.RawSubjectPublicKeyInfo)
+		certDetail[keys[6]] = certificate.SignatureAlgorithm.String()
+
 		//添加证书详情
 		showCertificateDetail(keys, certDetail, detail)
 	})
@@ -70,7 +71,7 @@ func showCertificateDetail(orderKeys []string, certDetail map[string]string, box
 			text := certDetail[key.Text]
 			value.SetText(text)
 		}
-		realKey := container.New(layout.NewGridWrapLayout(fyne.Size{100, 30}), key)
+		realKey := container.New(layout.NewGridWrapLayout(fyne.Size{150, 30}), key)
 		realValue := container.NewStack(value)
 		line := container.New(layout.NewFormLayout(), realKey, realValue)
 		box.Add(line)
