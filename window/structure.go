@@ -8,6 +8,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
+	gm "github.com/tjfoc/gmsm/x509"
 )
 
 // 构造解析证书核心图形模块
@@ -15,7 +16,7 @@ func Structure() *fyne.Container {
 	structure := container.NewVBox()
 	detail := container.NewVBox()
 	inputCertEntry := buildInputCertEntry("please input base64/hex cert")
-	certDetail := make(map[string]string)
+
 	inputCertEntry.Text = "MIICETCCAbWgAwIBAgINKl81oFaaablKOp0YTjAMBggqgRzPVQGDdQUAMGExCzAJBgNVBAYMAkNOMQ0wCwYDVQQKDARCSkNBMSUwIwYDVQQLDBxCSkNBIEFueXdyaXRlIFRydXN0IFNlcnZpY2VzMRwwGgYDVQQDDBNUcnVzdC1TaWduIFNNMiBDQS0xMB4XDTIwMDgxMzIwMTkzNFoXDTIwMTAyNDE1NTk1OVowHjELMAkGA1UEBgwCQ04xDzANBgNVBAMMBuWGr+i9rDBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABAIF97Sqq0Rv616L2PjFP3xt16QGJLmi+W8Ht+NLHiXntgUey0Nz+ZVnSUKUMzkKuGTikY3h2v7la20b6lpKo8WjgZIwgY8wCwYDVR0PBAQDAgbAMB0GA1UdDgQWBBSxiaS6z4Uguz3MepS2zblkuAF/LTAfBgNVHSMEGDAWgBTMZyRCGsP4rSes0vLlhIEf6cUvrjBABgNVHSAEOTA3MDUGCSqBHIbvMgICAjAoMCYGCCsGAQUFBwIBFhpodHRwOi8vd3d3LmJqY2Eub3JnLmNuL2NwczAMBggqgRzPVQGDdQUAA0gAMEUCIG6n6PG0BOK1EdFcvetQlC+9QhpsTuTui2wkeqWiPKYWAiEAvqR8Z+tSiYR5DIs7SyHJPWZ+sa8brtQL/1jURvHGxU8="
 	//确认按钮
 	confirm := buildButton("确认", func() {
@@ -33,18 +34,11 @@ func Structure() *fyne.Container {
 			fyne.LogError("解析证书错误", err)
 			return
 		}
-		//有序的key放切片，值对应在map
-		keys := []string{"SerialNumber", "SubjectName", "IssueName", "NotBefore", "NotAfter", "PublicKey", "SignatureAlgorithm"}
-		certDetail[keys[0]] = hex.EncodeToString(certificate.SerialNumber.Bytes())
-		certDetail[keys[1]] = certificate.Subject.String()
-		certDetail[keys[2]] = certificate.Issuer.String()
-		certDetail[keys[3]] = certificate.NotBefore.String()
-		certDetail[keys[4]] = certificate.NotAfter.String()
-		certDetail[keys[5]] = base64.StdEncoding.EncodeToString(certificate.RawSubjectPublicKeyInfo)
-		certDetail[keys[6]] = certificate.SignatureAlgorithm.String()
+		//构造证书解析详情
+		keys, value := buildCertificateDetail(certificate)
 
-		//添加证书详情
-		showCertificateDetail(keys, certDetail, detail)
+		//展示证书详情
+		showCertificateDetail(keys, value, detail)
 	})
 	//清除按钮
 	clear := buildButton("清除", func() {
@@ -58,6 +52,20 @@ func Structure() *fyne.Container {
 	structure.Add(allButton)
 	structure.Add(detail)
 	return structure
+}
+
+func buildCertificateDetail(certificate *gm.Certificate) (keys []string, certDetail map[string]string) {
+	certDetail = make(map[string]string)
+	//有序的key放切片，值对应在map
+	keys = []string{"SerialNumber", "SubjectName", "IssueName", "NotBefore", "NotAfter", "PublicKey", "SignatureAlgorithm"}
+	certDetail[keys[0]] = hex.EncodeToString(certificate.SerialNumber.Bytes())
+	certDetail[keys[1]] = certificate.Subject.String()
+	certDetail[keys[2]] = certificate.Issuer.String()
+	certDetail[keys[3]] = certificate.NotBefore.String()
+	certDetail[keys[4]] = certificate.NotAfter.String()
+	certDetail[keys[5]] = base64.StdEncoding.EncodeToString(certificate.RawSubjectPublicKeyInfo)
+	certDetail[keys[6]] = certificate.SignatureAlgorithm.String()
+	return keys, certDetail
 }
 
 // 将证书详情以表格的形式添加在最后

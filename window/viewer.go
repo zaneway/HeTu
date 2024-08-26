@@ -25,7 +25,7 @@ func newBody() *fyne.Container {
 	body := container.NewVBox(
 		helloGay,
 		Structure(),
-		freshTimeSeconds(),
+		refreshTimeSeconds(),
 	)
 	return body
 
@@ -33,7 +33,7 @@ func newBody() *fyne.Container {
 
 const DateTime = "2006-01-02 15:04:05"
 
-func freshTimeSeconds() *widget.Label {
+func refreshTimeSeconds() *widget.Label {
 	//填充当前时间
 	nowTime := widget.NewLabel(time.Now().Format(DateTime))
 	//异步线程更新时间
