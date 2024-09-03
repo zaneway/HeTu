@@ -57,7 +57,7 @@ func Structure() *fyne.Container {
 func buildCertificateDetail(certificate *gm.Certificate) (keys []string, certDetail map[string]string) {
 	certDetail = make(map[string]string)
 	//有序的key放切片，值对应在map
-	keys = []string{"SerialNumber", "SubjectName", "IssueName", "NotBefore", "NotAfter", "PublicKey", "SignatureAlgorithm"}
+	keys = []string{"SerialNumber", "SubjectName", "IssueName", "NotBefore", "NotAfter", "PublicKey", "SignatureAlgorithm", "KeyUsage"}
 	certDetail[keys[0]] = hex.EncodeToString(certificate.SerialNumber.Bytes())
 	certDetail[keys[1]] = certificate.Subject.String()
 	certDetail[keys[2]] = certificate.Issuer.String()
@@ -65,6 +65,8 @@ func buildCertificateDetail(certificate *gm.Certificate) (keys []string, certDet
 	certDetail[keys[4]] = certificate.NotAfter.String()
 	certDetail[keys[5]] = base64.StdEncoding.EncodeToString(certificate.RawSubjectPublicKeyInfo)
 	certDetail[keys[6]] = certificate.SignatureAlgorithm.String()
+	certDetail[keys[7]] = cert.ParseKeyUsage(certificate.KeyUsage)
+
 	return keys, certDetail
 }
 
