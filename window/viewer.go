@@ -14,9 +14,10 @@ import (
 func NewWindow() {
 	myApp := app.New()
 	// 创建一个窗口对象
-	myWindow := myApp.NewWindow("Cert Viewer")
+	myWindow := myApp.NewWindow("zaneway`s Cert Viewer")
 	body := newBody()
 	myWindow.SetContent(body)
+	myWindow.Resize(fyne.Size{800, 600})
 	myWindow.ShowAndRun()
 
 }
