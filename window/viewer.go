@@ -4,8 +4,10 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/lengzhao/font/autoload" //这个可以让你识别中文
+	"net/url"
 	"time"
 )
 
@@ -21,11 +23,18 @@ func NewWindow() {
 
 func newBody() *fyne.Container {
 	// 表头
-	helloGay := widget.NewLabel("欢迎访问全球最大的同性交友网站： https://github.com/zaneway/CertViewer ")
+	url, _ := url.Parse("https://github.com/zaneway/CertViewer")
+	link := widget.NewHyperlink("^-^  欢迎访问全球最大的同性交友网站  ^-^", url)
+	//超链接显示在中间
+	centerLink := container.NewCenter(link)
+	//时间显示在最右侧
+	rightTime := container.NewHBox(layout.NewSpacer(), refreshTimeSeconds())
+
+	//填充布局
 	body := container.NewVBox(
-		helloGay,
+		centerLink,
+		rightTime,
 		Structure(),
-		refreshTimeSeconds(),
 	)
 	return body
 
