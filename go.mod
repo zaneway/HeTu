@@ -8,6 +8,8 @@ require (
 	github.com/tjfoc/gmsm v1.4.1
 )
 
+replace github.com/tjfoc/gmsm => /Users/wegoo/SynologyDrive/code-space/GolandProjects/learn/gmsm
+
 require (
 	dmitri.shuralyov.com/font/woff2 v0.0.0-20180220214647-957792cbbdab // indirect
 	fyne.io/systray v1.11.0 // indirect
