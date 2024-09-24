@@ -8,7 +8,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	gm "github.com/tjfoc/gmsm/x509"
+	. "github.com/zaneway/cain-go/x509"
 )
 
 // 构造解析证书核心图形模块
@@ -54,7 +54,7 @@ func Structure() *fyne.Container {
 	return structure
 }
 
-func buildCertificateDetail(certificate *gm.Certificate) (keys []string, certDetail map[string]string) {
+func buildCertificateDetail(certificate *Certificate) (keys []string, certDetail map[string]string) {
 	certDetail = make(map[string]string)
 	//有序的key放切片，值对应在map
 	keys = []string{"SerialNumber", "SubjectName", "IssueName", "NotBefore", "NotAfter", "PublicKey", "PublicKeyAlgorithm", "SignatureAlgorithm", "KeyUsage"}
@@ -80,13 +80,13 @@ func buildCertificateDetail(certificate *gm.Certificate) (keys []string, certDet
 	return keys, certDetail
 }
 
-func ParsePublicKeyAlg(alg gm.PublicKeyAlgorithm) string {
+func ParsePublicKeyAlg(alg PublicKeyAlgorithm) string {
 	switch alg {
-	case gm.RSA:
+	case RSA:
 		return "RSA"
-	case gm.SM2:
+	case SM2:
 		return "SM2"
-	case gm.ECDSA:
+	case ECDSA:
 		return "ECDSA"
 	default:
 		return ""
