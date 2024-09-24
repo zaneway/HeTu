@@ -2,7 +2,7 @@ package cert
 
 import (
 	"fmt"
-	gm "github.com/tjfoc/gmsm/x509"
+	gm "github.com/zaneway/cain-go/x509"
 )
 
 var KeyUsages = make(map[gm.KeyUsage]string)
