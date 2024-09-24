@@ -7,14 +7,13 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/lengzhao/font/autoload" //这个可以让你识别中文
-	"net/url"
 	"time"
 )
 
 func NewWindow() {
 	myApp := app.New()
 	// 创建一个窗口对象
-	myWindow := myApp.NewWindow("zaneway`s Cert Viewer")
+	myWindow := myApp.NewWindow("证书解析客户端")
 	body := newBody()
 	myWindow.SetContent(body)
 	myWindow.Resize(fyne.Size{800, 600})
@@ -24,16 +23,16 @@ func NewWindow() {
 
 func newBody() *fyne.Container {
 	// 表头
-	url, _ := url.Parse("https://github.com/zaneway/CertViewer")
-	link := widget.NewHyperlink("^-^  欢迎访问全球最大的同性交友网站  ^-^", url)
-	//超链接显示在中间
-	centerLink := container.NewCenter(link)
+	//url, _ := url.Parse("https://github.com/zaneway/CertViewer/tree/bcja/v1.0.0-pqc")
+	//link := widget.NewHyperlink("^-^  欢迎使用证书解析客户端  ^-^", url)
+	////超链接显示在中间
+	//centerLink := container.NewCenter(link)
 	//时间显示在最右侧
 	rightTime := container.NewHBox(layout.NewSpacer(), refreshTimeSeconds())
 
 	//填充布局
 	body := container.NewVBox(
-		centerLink,
+		//centerLink,
 		rightTime,
 		Structure(),
 	)
