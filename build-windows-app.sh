@@ -1,5 +1,6 @@
 #!/bin/bash
 dir=$(pwd)
+go mod tidy
 echo 准备删除 $dir/CertViewer.exe
 rm -f $dir/CertViewer.exe
 echo 删除完成,开始打包
