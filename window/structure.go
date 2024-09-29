@@ -123,7 +123,7 @@ func showCertificateDetail(orderKeys []string, certDetail map[string]string, box
 }
 
 func buildInputCertEntry(data string) *widget.Entry {
-	inputCert := widget.NewEntry()
+	inputCert := widget.NewMultiLineEntry()
 	inputCert.Wrapping = fyne.TextWrapWord
 	inputCert.SetPlaceHolder(data)
 	return inputCert
