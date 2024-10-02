@@ -5,7 +5,7 @@ go 1.20
 require (
 	fyne.io/fyne/v2 v2.5.0
 	github.com/lengzhao/font v0.1.0
-	github.com/zaneway/cain-go v1.0.5
+	github.com/zaneway/cain-go v1.0.0-M0
 )
 
 require (

@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # you need install some tools
-# 1. go install fyne.io/fyne/v2/cmd/fyne@latest
-# 2. brew install create-dmg
+#  go get fyne.io/fyne/v2/cmd/fyne@latest
 
 echo start reflash go.sum
 go mod tidy
@@ -24,6 +23,11 @@ MacOSDirName=MacOS-App
 
 echo 开始删除无效目录: $MacOSDirName
 rm -fr $MacOSDirName
+
+rm -f $project_name.dmg
+
+
+
 # build new package
 mkdir $MacOSDirName
 
