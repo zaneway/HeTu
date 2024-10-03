@@ -337,3 +337,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+!/CertViewer.dmg
+!/go.sum
+!/MacOS-App/
