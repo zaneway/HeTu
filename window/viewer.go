@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/lengzhao/font/autoload" //这个可以让你识别中文
 	"net/url"
@@ -30,12 +31,14 @@ func newBody() *fyne.Container {
 	centerLink := container.NewCenter(link)
 	//时间显示在最右侧
 	rightTime := container.NewHBox(layout.NewSpacer(), refreshTimeSeconds())
+	//build tab
+	tabs := container.NewAppTabs(container.NewTabItemWithIcon("certificate", theme.InfoIcon(), Structure()), container.NewTabItemWithIcon("asn1", theme.ZoomInIcon(), Asn1Structure()))
 
 	//填充布局
 	body := container.NewVBox(
 		centerLink,
 		rightTime,
-		Structure(),
+		tabs,
 	)
 	return body
 
