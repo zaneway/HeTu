@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"strings"
@@ -49,6 +50,7 @@ func buildAccordion(node helper.ASN1Node, level int) *widget.AccordionItem {
 }
 
 func Asn1Structure() *fyne.Container {
+
 	// 创建输入框，供用户输入Base64数据
 	input := widget.NewMultiLineEntry()
 	input.SetPlaceHolder("Please input base64/hex cert")
@@ -61,7 +63,7 @@ func Asn1Structure() *fyne.Container {
 	accordion := widget.NewAccordion()
 
 	// 解析按钮
-	parseButton := widget.NewButtonWithIcon("确认", theme.ConfirmIcon(), func() {
+	confirmButton := widget.NewButtonWithIcon("确认", theme.ConfirmIcon(), func() {
 		inputData := strings.TrimSpace(input.Text)
 		decodedData, err := base64.StdEncoding.DecodeString(inputData)
 		if err != nil {
@@ -71,18 +73,24 @@ func Asn1Structure() *fyne.Container {
 				return
 			}
 		}
-		// 清空现有Accordion数据
-		accordion.CloseAll()
 		treeData = make(map[string]helper.ASN1Node)
 
 		// 解析ASN.1数据并构建Accordion
 		rootNode := helper.ParseAsn1(decodedData, treeData)
 		rootAccordionItem := buildAccordion(rootNode, 0) // 初始层级为0
+		//清除上次数据
+		accordion.RemoveIndex(0)
 		accordion.Append(rootAccordionItem)
 	})
-
+	//清除按钮
+	cancelButten := buildButton("清除", theme.CancelIcon(), func() {
+		input.Text = ""
+		input.Refresh()
+	})
 	// 布局
-	vbox := container.NewVBox(input, parseButton)
+	allButton := container.New(layout.NewGridLayout(2), confirmButton, cancelButten)
+	vbox := container.NewVBox(input, allButton)
+
 	return container.NewBorder(vbox, nil, nil, nil, accordion)
 
 }
