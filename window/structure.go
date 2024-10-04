@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	. "github.com/zaneway/cain-go/x509"
 )
@@ -19,7 +20,7 @@ func Structure() *fyne.Container {
 
 	//inputCertEntry.Text = "MIICETCCAbWgAwIBAgINKl81oFaaablKOp0YTjAMBggqgRzPVQGDdQUAMGExCzAJBgNVBAYMAkNOMQ0wCwYDVQQKDARCSkNBMSUwIwYDVQQLDBxCSkNBIEFueXdyaXRlIFRydXN0IFNlcnZpY2VzMRwwGgYDVQQDDBNUcnVzdC1TaWduIFNNMiBDQS0xMB4XDTIwMDgxMzIwMTkzNFoXDTIwMTAyNDE1NTk1OVowHjELMAkGA1UEBgwCQ04xDzANBgNVBAMMBuWGr+i9rDBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABAIF97Sqq0Rv616L2PjFP3xt16QGJLmi+W8Ht+NLHiXntgUey0Nz+ZVnSUKUMzkKuGTikY3h2v7la20b6lpKo8WjgZIwgY8wCwYDVR0PBAQDAgbAMB0GA1UdDgQWBBSxiaS6z4Uguz3MepS2zblkuAF/LTAfBgNVHSMEGDAWgBTMZyRCGsP4rSes0vLlhIEf6cUvrjBABgNVHSAEOTA3MDUGCSqBHIbvMgICAjAoMCYGCCsGAQUFBwIBFhpodHRwOi8vd3d3LmJqY2Eub3JnLmNuL2NwczAMBggqgRzPVQGDdQUAA0gAMEUCIG6n6PG0BOK1EdFcvetQlC+9QhpsTuTui2wkeqWiPKYWAiEAvqR8Z+tSiYR5DIs7SyHJPWZ+sa8brtQL/1jURvHGxU8="
 	//确认按钮
-	confirm := buildButton("确认", func() {
+	confirm := buildButton("确认", theme.ConfirmIcon(), func() {
 		inputCert := inputCertEntry.Text
 		detail.RemoveAll()
 		decodeCert, err := base64.StdEncoding.DecodeString(inputCert)
@@ -44,7 +45,7 @@ func Structure() *fyne.Container {
 		showCertificateDetail(keys, value, detail)
 	})
 	//清除按钮
-	clear := buildButton("清除", func() {
+	clear := buildButton("清除", theme.CancelIcon(), func() {
 		inputCertEntry.Text = ""
 		inputCertEntry.Refresh()
 	})
@@ -129,7 +130,10 @@ func buildInputCertEntry(data string) *widget.Entry {
 	return inputCert
 }
 
-func buildButton(data string, fun func()) *widget.Button {
-	button := widget.NewButton(data, fun)
+func buildButton(data string, icon fyne.Resource, fun func()) *widget.Button {
+	if icon == nil {
+		icon = theme.ConfirmIcon()
+	}
+	button := widget.NewButtonWithIcon(data, icon, fun)
 	return button
 }
