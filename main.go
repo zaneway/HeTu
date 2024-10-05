@@ -1,6 +1,6 @@
 package main
 
-import "CertViewer/window"
+import "HeTu/window"
 
 func main() {
 	window.NewWindow()

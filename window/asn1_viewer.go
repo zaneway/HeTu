@@ -1,7 +1,7 @@
 package window
 
 import (
-	"CertViewer/helper"
+	. "HeTu/helper"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -14,10 +14,10 @@ import (
 )
 
 // 将ASN.1结构转换为Accordion的递归函数，并加入缩进
-func buildAccordion(node helper.ASN1Node, level int) *widget.AccordionItem {
+func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	// 缩进根据层级来决定
 	indentation := fyne.NewSize(float32(level*30), 0) // 通过level决定缩进量
-	value := helper.TagToName[node.Tag]
+	value := TagToName[node.Tag]
 	// 节点的内容展示
 	content := widget.NewLabel(fmt.Sprintf("%s :", value))
 	content.Resize(fyne.NewSize(600, content.MinSize().Height))
@@ -57,7 +57,7 @@ func Asn1Structure() *fyne.Container {
 	//input.Text = "MIICETCCAbWgAwIBAgINKl81oFaaablKOp0YTjAMBggqgRzPVQGDdQUAMGExCzAJBgNVBAYMAkNOMQ0wCwYDVQQKDARCSkNBMSUwIwYDVQQLDBxCSkNBIEFueXdyaXRlIFRydXN0IFNlcnZpY2VzMRwwGgYDVQQDDBNUcnVzdC1TaWduIFNNMiBDQS0xMB4XDTIwMDgxMzIwMTkzNFoXDTIwMTAyNDE1NTk1OVowHjELMAkGA1UEBgwCQ04xDzANBgNVBAMMBuWGr+i9rDBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABAIF97Sqq0Rv616L2PjFP3xt16QGJLmi+W8Ht+NLHiXntgUey0Nz+ZVnSUKUMzkKuGTikY3h2v7la20b6lpKo8WjgZIwgY8wCwYDVR0PBAQDAgbAMB0GA1UdDgQWBBSxiaS6z4Uguz3MepS2zblkuAF/LTAfBgNVHSMEGDAWgBTMZyRCGsP4rSes0vLlhIEf6cUvrjBABgNVHSAEOTA3MDUGCSqBHIbvMgICAjAoMCYGCCsGAQUFBwIBFhpodHRwOi8vd3d3LmJqY2Eub3JnLmNuL2NwczAMBggqgRzPVQGDdQUAA0gAMEUCIG6n6PG0BOK1EdFcvetQlC+9QhpsTuTui2wkeqWiPKYWAiEAvqR8Z+tSiYR5DIs7SyHJPWZ+sa8brtQL/1jURvHGxU8="
 
 	// Tree数据存储
-	treeData := make(map[string]helper.ASN1Node)
+	treeData := make(map[string]ASN1Node)
 
 	// 创建Accordion组件
 	accordion := widget.NewAccordion()
@@ -73,10 +73,10 @@ func Asn1Structure() *fyne.Container {
 				return
 			}
 		}
-		treeData = make(map[string]helper.ASN1Node)
+		treeData = make(map[string]ASN1Node)
 
 		// 解析ASN.1数据并构建Accordion
-		rootNode := helper.ParseAsn1(decodedData, treeData)
+		rootNode := ParseAsn1(decodedData, treeData)
 		rootAccordionItem := buildAccordion(rootNode, 0) // 初始层级为0
 		//清除上次数据
 		accordion.RemoveIndex(0)
