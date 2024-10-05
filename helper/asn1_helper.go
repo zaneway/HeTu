@@ -1,7 +1,7 @@
 package helper
 
 import (
-	"CertViewer/util"
+	"HeTu/util"
 	"crypto/sha256"
 	"encoding/asn1"
 	"encoding/hex"
