@@ -2,6 +2,7 @@ package window
 
 import (
 	. "HeTu/helper"
+	"HeTu/util"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -18,7 +19,7 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	// 缩进根据层级来决定
 	indentation := fyne.NewSize(float32(level*30), 0) // 通过level决定缩进量
 
-	value := getRealTagName(node.Tag) + hex
+	value := fmt.Sprintf("%s (0x%s)", getRealTagName(node.Tag), util.HexEncodeIntToString(node.Tag))
 	// 节点的内容展示
 	content := widget.NewLabel(fmt.Sprintf("%s :", value))
 	content.Resize(fyne.NewSize(600, content.MinSize().Height))
