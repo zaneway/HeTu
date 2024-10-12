@@ -40,6 +40,7 @@ var ClassToNum = map[int]int{
 	3: 192, //0xc0,第8位和第7位为1
 }
 
+//asn1结构，tlv结构。Children=子节点，Content=实际报文，Sha256报文摘要，唯一标识
 type ASN1Node struct {
 	//this Tag is real Number in asn1
 	Tag, Class, Length int
