@@ -32,6 +32,7 @@ var TagToName = map[int]string{
 	30: "TagBMPString",
 }
 
+//asn1编码中，高位两位（第八位、第七位）的取值范围
 var ClassToNum = map[int]int{
 	0: 0,
 	1: 64,  //0x40,第7位为1
