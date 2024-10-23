@@ -3,6 +3,7 @@ package window
 import (
 	. "HeTu/helper"
 	"HeTu/util"
+	"encoding/asn1"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -18,8 +19,11 @@ import (
 func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	// 缩进根据层级来决定
 	indentation := fyne.NewSize(float32(level*30), 0) // 通过level决定缩进量
+	tag := getRealTag(node.Tag)
 
-	value := fmt.Sprintf("%s (0x%s)", getRealTagName(node.Tag), util.HexEncodeIntToString(node.Tag))
+	name := tag.TypeName
+	//标签名称
+	value := fmt.Sprintf("%s (0x%s)", name, util.HexEncodeIntToString(node.Tag))
 	// 节点的内容展示
 	content := widget.NewLabel(fmt.Sprintf("%s :", value))
 	content.Resize(fyne.NewSize(600, content.MinSize().Height))
@@ -41,10 +45,19 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 		//return widget.NewAccordionItem(fmt.Sprintf("%s :", value), container.NewVBox(content, indentedChildAccordion))
 		return widget.NewAccordionItem(fmt.Sprintf("%s :", value), container.NewVBox(indentedChildAccordion))
 	}
+	switch node.Tag {
+	case 6:
+		identifier := asn1.ObjectIdentifier{}
+		asn1.Unmarshal(node.FullBytes, &identifier)
+		node.Content = identifier.String()
+		break
+
+	}
 
 	// 如果没有子节点，直接返回包含内容的AccordionItem，应用缩进
 	indentedContent := container.NewHBox(
-		widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{}),               // 占位符保持布局
+		widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{}), // 占位符保持布局
+		//实际的值,todo 根据实际的Tag进行类型转换
 		container.NewMax(container.NewGridWrap(indentation), widget.NewLabel(node.Content)), // 缩进的Label
 	)
 
@@ -85,19 +98,19 @@ func Asn1Structure() *fyne.Container {
 		accordion.Append(rootAccordionItem)
 	})
 	//清除按钮
-	cancelButten := buildButton("清除", theme.CancelIcon(), func() {
+	cancelButton := buildButton("清除", theme.CancelIcon(), func() {
 		input.Text = ""
 		input.Refresh()
 	})
 	// 布局
-	allButton := container.New(layout.NewGridLayout(2), confirmButton, cancelButten)
+	allButton := container.New(layout.NewGridLayout(2), confirmButton, cancelButton)
 	vbox := container.NewVBox(input, allButton)
 
 	return container.NewBorder(vbox, nil, nil, nil, accordion)
 
 }
 
-func getRealTagName(tag int) string {
+func getRealTag(tag int) ASN1Content {
 	prefix := ""
 	//32 = 0x20, ASN1中小于0x20的都是通用简单类型
 
@@ -124,6 +137,7 @@ func getRealTagName(tag int) string {
 		prefix = "Private Structure "
 		tag -= 224
 	}
-
-	return prefix + TagToName[tag]
+	content := TagToName[tag]
+	content.TypeName = prefix + content.TypeName
+	return content
 }

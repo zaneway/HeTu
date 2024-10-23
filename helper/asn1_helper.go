@@ -7,32 +7,59 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"reflect"
+	"time"
 )
 
 // 定义tag和名称的映射关系
-var TagToName = map[int]string{
-	0:  "",
-	1:  "BOOLEAN",
-	2:  "INTEGER",
-	3:  "BIT STRING",
-	4:  "OCTET STRING",
-	5:  "NULL",
-	6:  "OBJECT IDENTIFIER",
-	8:  "EXTERNAL",
-	10: "ENUMERATED",
-	12: "UTF8String",
-	16: "SEQUENCE",
-	17: "SET",
-	19: "PrintableString",
-	20: "T61String",
-	22: "IA5String",
-	23: "UTCTime",
-	24: "GeneralizedTime",
-	27: "TagGeneralString",
-	30: "TagBMPString",
+//var TagToName = map[int]string{
+//	0:  "",
+//	1:  "BOOLEAN",
+//	2:  "INTEGER",
+//	3:  "BIT STRING",
+//	4:  "OCTET STRING",
+//	5:  "NULL",
+//	6:  "OBJECT IDENTIFIER",
+//	8:  "EXTERNAL",
+//	10: "ENUMERATED",
+//	12: "UTF8String",
+//	16: "SEQUENCE",
+//	17: "SET",
+//	19: "PrintableString",
+//	20: "T61String",
+//	22: "IA5String",
+//	23: "UTCTime",
+//	24: "GeneralizedTime",
+//	27: "TagGeneralString",
+//	30: "TagBMPString",
+//}
+
+type ASN1Content struct {
+	TypeName string
+	RealType interface{}
 }
 
-//asn1编码中，高位两位（第八位、第七位）的取值范围
+var TagToName = map[int]ASN1Content{
+	0:  {},
+	1:  {"BOOLEAN", reflect.TypeOf(true)},
+	2:  {"INTEGER", reflect.TypeOf(1)},
+	3:  {"BIT STRING", asn1.BitString{}},
+	4:  {"OCTET STRING", reflect.TypeOf(asn1.TagOctetString)},
+	5:  {"NULL", reflect.TypeOf(nil)},
+	6:  {"OBJECT IDENTIFIER", asn1.ObjectIdentifier{}},
+	10: {"ENUMERATED", reflect.TypeOf(asn1.Enumerated(1))},
+	12: {"UTF8String", reflect.TypeOf("")},
+	16: {"SEQUENCE", nil},
+	17: {"SET", nil},
+	19: {"PrintableString", reflect.TypeOf("")},
+	20: {"T61String", reflect.TypeOf("")},
+	22: {"IA5String", reflect.TypeOf("")},
+	23: {"UTCTime", reflect.TypeOf(time.DateTime)},
+	24: {"GeneralizedTime", reflect.TypeOf(time.DateTime)},
+	27: {"TagGeneralString", reflect.TypeOf("")},
+	30: {"TagBMPString", reflect.TypeOf("")},
+}
+
 var ClassToNum = map[int]int{
 	0: 0,
 	1: 64,  //0x40,第7位为1
@@ -40,12 +67,12 @@ var ClassToNum = map[int]int{
 	3: 192, //0xc0,第8位和第7位为1
 }
 
-//asn1结构，tlv结构。Children=子节点，Content=实际报文，Sha256报文摘要，唯一标识
 type ASN1Node struct {
 	//this Tag is real Number in asn1
 	Tag, Class, Length int
 	Children           []*ASN1Node
 	Content, SHA256    string
+	FullBytes          []byte
 }
 
 func ParseAsn1(data []byte, resultMap map[string]ASN1Node) ASN1Node {
@@ -83,7 +110,7 @@ func ParseAsn1(data []byte, resultMap map[string]ASN1Node) ASN1Node {
 	} else {
 		thisNode.Content = hex.EncodeToString(node.Bytes)
 	}
-
+	thisNode.FullBytes = node.FullBytes
 	//节点hash
 	digest := sha256.New()
 	digest.Write(util.Serialize(thisNode))
