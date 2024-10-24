@@ -2,10 +2,12 @@ package helper
 
 import (
 	"HeTu/util"
-	"crypto/sha256"
 	"encoding/asn1"
 	"encoding/hex"
+	"fmt"
+	"github.com/zaneway/cain-go/sm2"
 	"log"
+	"math/big"
 	"reflect"
 	"time"
 )
@@ -70,11 +72,11 @@ type ASN1Node struct {
 	//this Tag is real Number in asn1
 	Tag, Class, Length int
 	Children           []*ASN1Node
-	SHA256             string
+	Value              string
 	Content, FullBytes []byte
 }
 
-func ParseAsn1(data []byte, resultMap map[string]ASN1Node) ASN1Node {
+func ParseAsn1(data []byte) ASN1Node {
 	var thisNode ASN1Node
 	var node asn1.RawValue
 
@@ -99,7 +101,7 @@ func ParseAsn1(data []byte, resultMap map[string]ASN1Node) ASN1Node {
 	if node.IsCompound {
 		thisNodeValue := node.Bytes
 		for len(thisNodeValue) > 0 {
-			childrenNode := ParseAsn1(thisNodeValue, resultMap)
+			childrenNode := ParseAsn1(thisNodeValue)
 			thisNode.Children = append(thisNode.Children, &childrenNode)
 			//上面可能只截取了第一段结构
 			thisNodeValue = thisNodeValue[childrenNode.Length:]
@@ -109,11 +111,96 @@ func ParseAsn1(data []byte, resultMap map[string]ASN1Node) ASN1Node {
 		thisNode.Content = node.Bytes
 	}
 	thisNode.FullBytes = node.FullBytes
-	//节点hash
-	digest := sha256.New()
-	digest.Write(util.Serialize(thisNode))
-	hashBytes := digest.Sum(nil)
-	thisNode.SHA256 = hex.EncodeToString(hashBytes)
-	resultMap[thisNode.SHA256] = thisNode
+	thisNode.Value = buildAsn1Value(thisNode)
 	return thisNode
+}
+
+func buildAsn1Value(node ASN1Node) (data string) {
+	data = hex.EncodeToString(node.Content)
+	switch node.Tag {
+	//big int
+	case 2:
+		bigInt, _ := parseBigInt(node.Content)
+		data = bigInt.String()
+		break
+		//bit string
+	case 3:
+		ret, _ := parseBitString(node.Content)
+		data = hex.EncodeToString(ret.Bytes)
+		r, s, err := sm2.SignDataToSignDigit(ret.Bytes)
+		if err == nil {
+			data = fmt.Sprintf("%s \n%s", r, s)
+		}
+		break
+	//OID
+	case 6:
+		identifier := asn1.ObjectIdentifier{}
+		asn1.Unmarshal(node.FullBytes, &identifier)
+		data = identifier.String()
+		break
+		//UTF8String
+	case 12:
+		data = string(node.Content)
+		break
+		//UTC time
+	case 23:
+		s := string(node.Content)
+		parse, _ := time.Parse(util.FormatStr, s)
+		data = parse.Format(util.DateTime)
+		break
+	}
+	return
+}
+
+func parseBigInt(bytes []byte) (*big.Int, error) {
+	if err := checkInteger(bytes); err != nil {
+		return nil, err
+	}
+	ret := new(big.Int)
+	if len(bytes) > 0 && bytes[0]&0x80 == 0x80 {
+		// This is a negative number.
+		notBytes := make([]byte, len(bytes))
+		for i := range notBytes {
+			notBytes[i] = ^bytes[i]
+		}
+		ret.SetBytes(notBytes)
+		ret.Add(ret, bigOne)
+		ret.Neg(ret)
+		return ret, nil
+	}
+	ret.SetBytes(bytes)
+	return ret, nil
+}
+
+var bigOne = big.NewInt(1)
+
+func checkInteger(bytes []byte) error {
+	if len(bytes) == 0 {
+		return asn1.StructuralError{"empty integer"}
+	}
+	if len(bytes) == 1 {
+		return nil
+	}
+	if (bytes[0] == 0 && bytes[1]&0x80 == 0) || (bytes[0] == 0xff && bytes[1]&0x80 == 0x80) {
+		return asn1.StructuralError{"integer not minimally-encoded"}
+	}
+	return nil
+}
+
+// parseBitString parses an ASN.1 bit string from the given byte slice and returns it.
+func parseBitString(bytes []byte) (ret asn1.BitString, err error) {
+	if len(bytes) == 0 {
+		err = asn1.SyntaxError{"zero length BIT STRING"}
+		return
+	}
+	paddingBits := int(bytes[0])
+	if paddingBits > 7 ||
+		len(bytes) == 1 && paddingBits > 0 ||
+		bytes[len(bytes)-1]&((1<<bytes[0])-1) != 0 {
+		err = asn1.SyntaxError{"invalid padding bits in BIT STRING"}
+		return
+	}
+	ret.BitLength = (len(bytes)-1)*8 - paddingBits
+	ret.Bytes = bytes[1:]
+	return
 }

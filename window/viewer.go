@@ -1,6 +1,7 @@
 package window
 
 import (
+	"HeTu/util"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -44,15 +45,13 @@ func newBody() *fyne.Container {
 
 }
 
-const DateTime = "2006-01-02 15:04:05"
-
 func refreshTimeSeconds() *widget.Label {
 	//填充当前时间
-	nowTime := widget.NewLabel(time.Now().Format(DateTime))
+	nowTime := widget.NewLabel(time.Now().Format(util.DateTime))
 	//异步线程更新时间
 	go func() {
 		for range time.Tick(time.Second) {
-			nowTime.SetText(time.Now().Format(DateTime))
+			nowTime.SetText(time.Now().Format(util.DateTime))
 		}
 	}()
 	return nowTime
