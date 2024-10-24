@@ -22,12 +22,13 @@ import (
 func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	// 缩进根据层级来决定
 	indentation := fyne.NewSize(float32(level*30), 0) // 通过level决定缩进量
+	//根据节点Tag获取指定类型
 	tag := getRealTag(node.Tag)
 
 	name := tag.TypeName
 	//标签名称
 	value := fmt.Sprintf("%s (0x%s)", name, util.HexEncodeIntToString(node.Tag))
-	// 节点的内容展示
+	// 展示标签
 	content := widget.NewLabel(fmt.Sprintf("%s :", value))
 	content.Resize(fyne.NewSize(600, content.MinSize().Height))
 
@@ -42,6 +43,7 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 		childAccordion := widget.NewAccordion(childrenAccordionItems...)
 		//禁止折叠
 		//childAccordion.MultiOpen = true
+
 		// 包装子节点为带缩进的Container
 		indentedChildAccordion := container.NewHBox(
 			widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{}), // 占位符保持布局

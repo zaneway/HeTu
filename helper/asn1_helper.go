@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/asn1"
 	"encoding/hex"
-	"fmt"
 	"log"
 	"reflect"
 	"time"
@@ -99,7 +98,6 @@ func ParseAsn1(data []byte, resultMap map[string]ASN1Node) ASN1Node {
 	//
 	if node.IsCompound {
 		thisNodeValue := node.Bytes
-		fmt.Println("thisNodeValue:", hex.EncodeToString(thisNodeValue))
 		for len(thisNodeValue) > 0 {
 			childrenNode := ParseAsn1(thisNodeValue, resultMap)
 			thisNode.Children = append(thisNode.Children, &childrenNode)
