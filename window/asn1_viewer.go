@@ -12,7 +12,10 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/zaneway/cain-go/sm2"
+	"math/big"
 	"strings"
+	"time"
 )
 
 // 将ASN.1结构转换为Accordion的递归函数，并加入缩进
@@ -37,6 +40,8 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	// 如果有子节点，将这些子节点放入到容器中，并应用缩进
 	if len(childrenAccordionItems) > 0 {
 		childAccordion := widget.NewAccordion(childrenAccordionItems...)
+		//禁止折叠
+		//childAccordion.MultiOpen = true
 		// 包装子节点为带缩进的Container
 		indentedChildAccordion := container.NewHBox(
 			widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{}), // 占位符保持布局
@@ -45,23 +50,50 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 		//return widget.NewAccordionItem(fmt.Sprintf("%s :", value), container.NewVBox(content, indentedChildAccordion))
 		return widget.NewAccordionItem(fmt.Sprintf("%s :", value), container.NewVBox(indentedChildAccordion))
 	}
+	data := hex.EncodeToString(node.Content)
 	switch node.Tag {
+	//big int
+	case 2:
+		bigInt, _ := parseBigInt(node.Content)
+		data = bigInt.String()
+		break
+		//bit string
+	case 3:
+		ret, _ := parseBitString(node.Content)
+		data = hex.EncodeToString(ret.Bytes)
+		r, s, err := sm2.SignDataToSignDigit(ret.Bytes)
+		if err == nil {
+			data = fmt.Sprintf("%s \n%s", r, s)
+		}
+		break
+	//OID
 	case 6:
 		identifier := asn1.ObjectIdentifier{}
 		asn1.Unmarshal(node.FullBytes, &identifier)
-		node.Content = identifier.String()
+		data = identifier.String()
 		break
-
+		//UTF8String
+	case 12:
+		data = string(node.Content)
+		break
+		//UTC time
+	case 23:
+		s := string(node.Content)
+		formatStr := "060102150405Z0700"
+		parse, _ := time.Parse(formatStr, s)
+		data = parse.Format(DateTime)
+		break
 	}
 
-	// 如果没有子节点，直接返回包含内容的AccordionItem，应用缩进
+	// 		value = string(node.Content)如果没有子节点，直接返回包含内容的AccordionItem，应用缩进
 	indentedContent := container.NewHBox(
 		widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{}), // 占位符保持布局
 		//实际的值,todo 根据实际的Tag进行类型转换
-		container.NewMax(container.NewGridWrap(indentation), widget.NewLabel(node.Content)), // 缩进的Label
+		container.NewMax(container.NewGridWrap(indentation), widget.NewLabel(data)), // 缩进的Label
 	)
 
-	return widget.NewAccordionItem(fmt.Sprintf("%s :", value), indentedContent)
+	item := widget.NewAccordionItem(fmt.Sprintf("%s :", value), indentedContent)
+	return item
 }
 
 func Asn1Structure() *fyne.Container {
@@ -140,4 +172,56 @@ func getRealTag(tag int) ASN1Content {
 	content := TagToName[tag]
 	content.TypeName = prefix + content.TypeName
 	return content
+}
+func parseBigInt(bytes []byte) (*big.Int, error) {
+	if err := checkInteger(bytes); err != nil {
+		return nil, err
+	}
+	ret := new(big.Int)
+	if len(bytes) > 0 && bytes[0]&0x80 == 0x80 {
+		// This is a negative number.
+		notBytes := make([]byte, len(bytes))
+		for i := range notBytes {
+			notBytes[i] = ^bytes[i]
+		}
+		ret.SetBytes(notBytes)
+		ret.Add(ret, bigOne)
+		ret.Neg(ret)
+		return ret, nil
+	}
+	ret.SetBytes(bytes)
+	return ret, nil
+}
+
+var bigOne = big.NewInt(1)
+
+func checkInteger(bytes []byte) error {
+	if len(bytes) == 0 {
+		return asn1.StructuralError{"empty integer"}
+	}
+	if len(bytes) == 1 {
+		return nil
+	}
+	if (bytes[0] == 0 && bytes[1]&0x80 == 0) || (bytes[0] == 0xff && bytes[1]&0x80 == 0x80) {
+		return asn1.StructuralError{"integer not minimally-encoded"}
+	}
+	return nil
+}
+
+// parseBitString parses an ASN.1 bit string from the given byte slice and returns it.
+func parseBitString(bytes []byte) (ret asn1.BitString, err error) {
+	if len(bytes) == 0 {
+		err = asn1.SyntaxError{"zero length BIT STRING"}
+		return
+	}
+	paddingBits := int(bytes[0])
+	if paddingBits > 7 ||
+		len(bytes) == 1 && paddingBits > 0 ||
+		bytes[len(bytes)-1]&((1<<bytes[0])-1) != 0 {
+		err = asn1.SyntaxError{"invalid padding bits in BIT STRING"}
+		return
+	}
+	ret.BitLength = (len(bytes)-1)*8 - paddingBits
+	ret.Bytes = bytes[1:]
+	return
 }

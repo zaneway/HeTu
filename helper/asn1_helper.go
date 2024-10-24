@@ -71,8 +71,8 @@ type ASN1Node struct {
 	//this Tag is real Number in asn1
 	Tag, Class, Length int
 	Children           []*ASN1Node
-	Content, SHA256    string
-	FullBytes          []byte
+	SHA256             string
+	Content, FullBytes []byte
 }
 
 func ParseAsn1(data []byte, resultMap map[string]ASN1Node) ASN1Node {
@@ -108,7 +108,7 @@ func ParseAsn1(data []byte, resultMap map[string]ASN1Node) ASN1Node {
 		}
 
 	} else {
-		thisNode.Content = hex.EncodeToString(node.Bytes)
+		thisNode.Content = node.Bytes
 	}
 	thisNode.FullBytes = node.FullBytes
 	//节点hash
