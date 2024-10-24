@@ -19,9 +19,8 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	// 缩进根据层级来决定
 	indentation := fyne.NewSize(float32(level*30), 0) // 通过level决定缩进量
 	//根据节点Tag获取指定类型
-	tag := getRealTag(node.Tag)
+	name := getRealTag(node.Tag)
 
-	name := tag.TypeName
 	//标签名称
 	value := fmt.Sprintf("%s (0x%s)", name, util.HexEncodeIntToString(node.Tag))
 	// 展示标签
@@ -52,7 +51,7 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	// 		value = string(node.Content)如果没有子节点，直接返回包含内容的AccordionItem，应用缩进
 	indentedContent := container.NewHBox(
 		widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{}), // 占位符保持布局
-		//实际的值,todo 根据实际的Tag进行类型转换
+		//实际的值
 		container.NewMax(container.NewGridWrap(indentation), widget.NewLabel(node.Value)), // 缩进的Label
 	)
 
@@ -81,7 +80,7 @@ func Asn1Structure() *fyne.Container {
 				return
 			}
 		}
-
+		//todo 尝试解析为几种常见的结构
 		// 解析ASN.1数据并构建Accordion
 		rootNode := ParseAsn1(decodedData)
 		rootAccordionItem := buildAccordion(rootNode, 0) // 初始层级为0
@@ -102,7 +101,7 @@ func Asn1Structure() *fyne.Container {
 
 }
 
-func getRealTag(tag int) ASN1Content {
+func getRealTag(tag int) string {
 	prefix := ""
 	//32 = 0x20, ASN1中小于0x20的都是通用简单类型
 
@@ -129,7 +128,8 @@ func getRealTag(tag int) ASN1Content {
 		prefix = "Private Structure "
 		tag -= 224
 	}
-	content := TagToName[tag]
-	content.TypeName = prefix + content.TypeName
-	return content
+	if len(prefix) > 0 {
+		prefix = fmt.Sprintf("%s :", prefix)
+	}
+	return prefix + TagToName[tag]
 }
