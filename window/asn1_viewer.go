@@ -80,7 +80,6 @@ func Asn1Structure() *fyne.Container {
 				return
 			}
 		}
-		//todo 尝试解析为几种常见的结构
 		// 解析ASN.1数据并构建Accordion
 		rootNode := ParseAsn1(decodedData)
 		rootAccordionItem = buildAccordion(rootNode, 0) // 初始层级为0
