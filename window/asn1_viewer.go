@@ -68,7 +68,7 @@ func Asn1Structure() *fyne.Container {
 
 	// 创建Accordion组件
 	accordion := widget.NewAccordion()
-
+	var rootAccordionItem *widget.AccordionItem
 	// 解析按钮
 	confirmButton := widget.NewButtonWithIcon("确认", theme.ConfirmIcon(), func() {
 		inputData := strings.TrimSpace(input.Text)
@@ -83,7 +83,7 @@ func Asn1Structure() *fyne.Container {
 		//todo 尝试解析为几种常见的结构
 		// 解析ASN.1数据并构建Accordion
 		rootNode := ParseAsn1(decodedData)
-		rootAccordionItem := buildAccordion(rootNode, 0) // 初始层级为0
+		rootAccordionItem = buildAccordion(rootNode, 0) // 初始层级为0
 		//清除上次数据
 		accordion.RemoveIndex(0)
 		accordion.Append(rootAccordionItem)
@@ -92,6 +92,9 @@ func Asn1Structure() *fyne.Container {
 	cancelButton := buildButton("清除", theme.CancelIcon(), func() {
 		input.Text = ""
 		input.Refresh()
+		//清除上次数据
+		accordion.RemoveIndex(0)
+		accordion.Refresh()
 	})
 	// 布局
 	allButton := container.New(layout.NewGridLayout(2), confirmButton, cancelButton)
