@@ -39,27 +39,6 @@ type ASN1Content struct {
 	RealType interface{}
 }
 
-//var TagToName = map[int]ASN1Content{
-//	0:  {},
-//	1:  {"BOOLEAN", reflect.TypeOf(true)},
-//	2:  {"INTEGER", reflect.TypeOf(1)},
-//	3:  {"BIT STRING", asn1.BitString{}},
-//	4:  {"OCTET STRING", reflect.TypeOf(asn1.TagOctetString)},
-//	5:  {"NULL", reflect.TypeOf(nil)},
-//	6:  {"OBJECT IDENTIFIER", asn1.ObjectIdentifier{}},
-//	10: {"ENUMERATED", reflect.TypeOf(asn1.Enumerated(1))},
-//	12: {"UTF8String", reflect.TypeOf("")},
-//	16: {"SEQUENCE", nil},
-//	17: {"SET", nil},
-//	19: {"PrintableString", reflect.TypeOf("")},
-//	20: {"T61String", reflect.TypeOf("")},
-//	22: {"IA5String", reflect.TypeOf("")},
-//	23: {"UTCTime", reflect.TypeOf(time.DateTime)},
-//	24: {"GeneralizedTime", reflect.TypeOf(time.DateTime)},
-//	27: {"TagGeneralString", reflect.TypeOf("")},
-//	30: {"TagBMPString", reflect.TypeOf("")},
-//}
-
 var ClassToNum = map[int]int{
 	0: 0,
 	1: 64,  //0x40,第7位为1
@@ -134,6 +113,7 @@ func buildAsn1Value(node ASN1Node) (data string) {
 	case 6:
 		identifier := asn1.ObjectIdentifier{}
 		asn1.Unmarshal(node.FullBytes, &identifier)
+		//todo 根据OID解析出对应算法
 		data = identifier.String()
 		break
 		//UTF8String
