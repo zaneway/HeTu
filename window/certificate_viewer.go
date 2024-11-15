@@ -13,7 +13,7 @@ import (
 )
 
 // 构造解析证书核心图形模块
-func Structure() *fyne.Container {
+func CertificateStructure() *fyne.Container {
 	structure := container.NewVBox()
 	detail := container.NewVBox()
 	inputCertEntry := buildInputCertEntry("Please input base64/hex cert")

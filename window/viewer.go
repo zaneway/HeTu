@@ -33,7 +33,7 @@ func newBody() *fyne.Container {
 	//时间显示在最右侧
 	rightTime := container.NewHBox(layout.NewSpacer(), refreshTimeSeconds())
 	//build tab
-	tabs := container.NewAppTabs(container.NewTabItemWithIcon("certificate", theme.InfoIcon(), Structure()), container.NewTabItemWithIcon("asn1", theme.ZoomInIcon(), Asn1Structure()))
+	tabs := container.NewAppTabs(container.NewTabItemWithIcon("certificate", theme.InfoIcon(), CertificateStructure()), container.NewTabItemWithIcon("asn1", theme.ZoomInIcon(), Asn1Structure()))
 
 	//填充布局
 	body := container.NewVBox(
