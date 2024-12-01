@@ -100,7 +100,7 @@ func buildAsn1Value(node ASN1Node) (data string) {
 		bigInt, _ := parseBigInt(node.Content)
 		data = bigInt.String()
 		break
-		//bit string
+	//bit string
 	case 3:
 		ret, _ := parseBitString(node.Content)
 		data = hex.EncodeToString(ret.Bytes)
@@ -115,12 +115,22 @@ func buildAsn1Value(node ASN1Node) (data string) {
 		asn1.Unmarshal(node.FullBytes, &identifier)
 		//todo 根据OID解析出对应算法
 		data = identifier.String()
+		switch identifier {
+		//RSA
+		case asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}:
+			data = "RSA"
+			break
+		case asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}:
+			data = "ECDSA"
+			break
+
+		}
 		break
-		//UTF8String
+	//UTF8String
 	case 12:
 		data = string(node.Content)
 		break
-		//UTC time
+	//UTC time
 	case 23:
 		s := string(node.Content)
 		parse, _ := time.Parse(util.FormatStr, s)
