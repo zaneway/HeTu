@@ -123,6 +123,10 @@ func buildAsn1Value(node ASN1Node) (data string) {
 		case asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}:
 			data = "ECDSA"
 			break
+		// SM2
+		case asn1.ObjectIdentifier{1, 2, 156, 10197, 1, 301}:
+			data = "SM2"
+			break
 
 		}
 		break
