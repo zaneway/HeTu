@@ -112,19 +112,22 @@ func buildAsn1Value(node ASN1Node) (data string) {
 	//OID
 	case 6:
 		identifier := asn1.ObjectIdentifier{}
-		asn1.Unmarshal(node.FullBytes, &identifier)
+		_, err := asn1.Unmarshal(node.FullBytes, &identifier)
+		if err != nil {
+			return ""
+		}
 		//todo 根据OID解析出对应算法
 		data = identifier.String()
-		switch identifier {
+		switch data {
 		//RSA
-		case asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}:
+		case asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}.String():
 			data = "RSA"
 			break
-		case asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}:
+		case asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}.String():
 			data = "ECDSA"
 			break
 		// SM2
-		case asn1.ObjectIdentifier{1, 2, 156, 10197, 1, 301}:
+		case asn1.ObjectIdentifier{1, 2, 156, 10197, 1, 301}.String():
 			data = "SM2"
 			break
 
