@@ -34,10 +34,10 @@ func newBody() *fyne.Container {
 	rightTime := container.NewHBox(layout.NewSpacer(), refreshTimeSeconds())
 	//build tab
 	tabs := container.NewAppTabs(
+		container.NewTabItemWithIcon("coder", theme.ZoomInIcon(), CoderStructure()),
 		container.NewTabItemWithIcon("certificate", theme.InfoIcon(), CertificateStructure()),
 		container.NewTabItemWithIcon("asn1", theme.ZoomInIcon(), Asn1Structure()),
-		container.NewTabItemWithIcon("coder", theme.ZoomInIcon(), CoderStructure()))
-
+	)
 	//填充布局
 	body := container.NewVBox(
 		centerLink,
