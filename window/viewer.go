@@ -16,7 +16,7 @@ import (
 func NewWindow() {
 	myApp := app.New()
 	// 创建一个窗口对象
-	myWindow := myApp.NewWindow("zaneway`s Cert Viewer")
+	myWindow := myApp.NewWindow("zaneway`s Tools of HeTu")
 	body := newBody()
 	myWindow.SetContent(body)
 	myWindow.Resize(fyne.Size{800, 600})
@@ -26,7 +26,7 @@ func NewWindow() {
 
 func newBody() *fyne.Container {
 	// 表头
-	url, _ := url.Parse("https://github.com/zaneway/CertViewer")
+	url, _ := url.Parse("https://github.com/zaneway/HeTu")
 	link := widget.NewHyperlink("^-^  欢迎访问全球最大的同性交友网站  ^-^", url)
 	//超链接显示在中间
 	centerLink := container.NewCenter(link)
