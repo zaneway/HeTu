@@ -59,6 +59,28 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	return item
 }
 
+func KeyStructure() *fyne.Container {
+	var selects = []string{"SM2", "RSA", "AES"}
+	newSelect := widget.NewSelect(selects, func(alg string) {
+		switch alg {
+		case "SM2":
+			print("this is SM2")
+			break
+		case "RSA":
+			print("this is RSA")
+			break
+		case "AES":
+			print("this is AES")
+			break
+
+		}
+
+	})
+	structure := container.NewVBox()
+	structure.Add(newSelect)
+	return structure
+}
+
 func Asn1Structure() *fyne.Container {
 
 	// 创建输入框，供用户输入Base64数据
