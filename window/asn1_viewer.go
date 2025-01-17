@@ -59,7 +59,12 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	return item
 }
 
+type KeyAlg struct {
+	//算法、长度、Map？
+}
+
 func KeyStructure() *fyne.Container {
+	//算法\长度
 	var selects = []string{"SM2", "RSA", "AES"}
 	newSelect := widget.NewSelect(selects, func(alg string) {
 		switch alg {
