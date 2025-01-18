@@ -2,6 +2,7 @@ package window
 
 import (
 	. "HeTu/helper"
+	"HeTu/security"
 	"HeTu/util"
 	"encoding/base64"
 	"encoding/hex"
@@ -59,27 +60,20 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	return item
 }
 
-type KeyAlg struct {
-	//算法、长度、Map？
-}
-
 func KeyStructure() *fyne.Container {
 	//算法\长度
-	var selects = []string{"SM2", "RSA", "AES"}
-	newSelect := widget.NewSelect(selects, func(alg string) {
+	newSelect := widget.NewSelect(append(security.ALL_ASYM_KEYS, security.ALL_SYM_KEYS...), func(alg string) {
 		switch alg {
-		case "SM2":
-			print("this is SM2")
+		case security.SM2_256:
+			print("this  is SM2")
 			break
-		case "RSA":
+		case security.RSA_1024:
 			print("this is RSA")
 			break
-		case "AES":
+		case security.AES_128:
 			print("this is AES")
 			break
-
 		}
-
 	})
 	structure := container.NewVBox()
 	structure.Add(newSelect)
