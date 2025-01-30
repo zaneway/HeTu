@@ -2,6 +2,8 @@ package window
 
 import (
 	"HeTu/security"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/hex"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -19,10 +21,14 @@ func KeyStructure() *fyne.Container {
 			println("Pri:", hex.EncodeToString(priKey.D.Bytes()))
 			break
 		case security.RSA_1024:
-			print("this is RSA")
+			key, _ := rsa.GenerateKey(nil, 1024)
+			println("Pub:", hex.EncodeToString(key.PublicKey.N.Bytes()))
+			println("Pri:", hex.EncodeToString(key.D.Bytes()))
 			break
 		case security.AES_128:
-			print("this is AES")
+			aesKey := make([]byte, 16)
+			rand.Read(aesKey)
+			print(" AES:", hex.EncodeToString(aesKey))
 			break
 		}
 	})
