@@ -11,7 +11,8 @@ import (
 	"github.com/zaneway/cain-go/sm2"
 )
 
-func KeyStructure() *fyne.Container {
+func KeyStructure(input *widget.Entry) *fyne.Container {
+	//input.Hide()
 	//算法\长度
 	newSelect := widget.NewSelect(append(security.ALL_ASYM_KEYS, security.ALL_SYM_KEYS...), func(alg string) {
 		switch alg {

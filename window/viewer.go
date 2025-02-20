@@ -32,12 +32,15 @@ func newBody() *fyne.Container {
 	centerLink := container.NewCenter(link)
 	//时间显示在最右侧
 	rightTime := container.NewHBox(layout.NewSpacer(), refreshTimeSeconds())
+	//搞一个公共输入框
+	input := widget.NewMultiLineEntry()
+	input.SetPlaceHolder("Please input base64/hex data")
 	//build tab
 	tabs := container.NewAppTabs(
-		container.NewTabItemWithIcon("coder", theme.ZoomInIcon(), CoderStructure()),
-		container.NewTabItemWithIcon("certificate", theme.InfoIcon(), CertificateStructure()),
-		container.NewTabItemWithIcon("asn1", theme.ZoomInIcon(), Asn1Structure()),
-		container.NewTabItemWithIcon("key", theme.ColorChromaticIcon(), KeyStructure()),
+		container.NewTabItemWithIcon("coder", theme.ZoomInIcon(), CoderStructure(input)),
+		container.NewTabItemWithIcon("certificate", theme.InfoIcon(), CertificateStructure(input)),
+		container.NewTabItemWithIcon("asn1", theme.ZoomInIcon(), Asn1Structure(input)),
+		container.NewTabItemWithIcon("key", theme.ColorChromaticIcon(), KeyStructure(input)),
 	)
 	//填充布局
 	body := container.NewVBox(

@@ -12,9 +12,8 @@ import (
 	"strings"
 )
 
-func CoderStructure() *fyne.Container {
+func CoderStructure(input *widget.Entry) *fyne.Container {
 	// 创建输入框，供用户输入数据
-	input := widget.NewMultiLineEntry()
 	output := widget.NewMultiLineEntry()
 	output.Hide()
 	input.SetPlaceHolder("Please input base64/hex data")
