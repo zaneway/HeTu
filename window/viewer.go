@@ -41,6 +41,8 @@ func newBody() *fyne.Container {
 		container.NewTabItemWithIcon("certificate", theme.InfoIcon(), CertificateStructure(input)),
 		container.NewTabItemWithIcon("asn1", theme.ZoomInIcon(), Asn1Structure(input)),
 		container.NewTabItemWithIcon("key", theme.ColorChromaticIcon(), KeyStructure(input)),
+		container.NewTabItemWithIcon("envelop", theme.ZoomInIcon(), SM2EnvelopedPfxStructure(input)),
+		container.NewTabItemWithIcon("p12", theme.FolderIcon(), SM2PfxStructure(input)),
 	)
 	//填充布局
 	body := container.NewVBox(
