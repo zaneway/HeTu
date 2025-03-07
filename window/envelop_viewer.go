@@ -19,11 +19,11 @@ func SM2EnvelopedPfxStructure(input *widget.Entry) *fyne.Container {
 	input.SetPlaceHolder("Please input base64/hex enveloped(GMT-0009)")
 	input.Refresh()
 	input.Wrapping = fyne.TextWrapWord
-	input.Text = "MIHxMAwGCCqBHM9VAWgBBQAwegIhAMn/+ClYld5HKOj5JFdYZz8J4INMb+xT64hE5vnn+uFNAiEA/x7Zs47KTpO3DVJBQF9ccegoIYLEbBsRdPV3vy+yqg8EIDQPDQXzf2I0GvERWZuYPxTl0635mJOesnFPD+Wj1AO2BBBfllNH03r8WZ2cvK3tlACxA0IABBRwHZgGMVEB2SnMRxGWmHnP0pwRLE8M1X4b9G47345dpVTkML5kbrde6OufsBIFLfLfGcrydVkeXRt3AY1uH40DIQCUyF3nhuu+9ibomzX4IcwcArNBOBiSoY9fe16RLZLJOg=="
+	//input.Text = "MIHxMAwGCCqBHM9VAWgBBQAwegIhAMn/+ClYld5HKOj5JFdYZz8J4INMb+xT64hE5vnn+uFNAiEA/x7Zs47KTpO3DVJBQF9ccegoIYLEbBsRdPV3vy+yqg8EIDQPDQXzf2I0GvERWZuYPxTl0635mJOesnFPD+Wj1AO2BBBfllNH03r8WZ2cvK3tlACxA0IABBRwHZgGMVEB2SnMRxGWmHnP0pwRLE8M1X4b9G47345dpVTkML5kbrde6OufsBIFLfLfGcrydVkeXRt3AY1uH40DIQCUyF3nhuu+9ibomzX4IcwcArNBOBiSoY9fe16RLZLJOg=="
 	structure := container.NewVBox()
 	KeyInput := buildInputCertEntry("Please input base64/hex private key")
 	KeyInput.Wrapping = fyne.TextWrapWord
-	KeyInput.Text = "MHcCAQEEIP7J6j7OktAgLXGxKXNkD11Ua/Int8FyOpou21ClJ86JoAoGCCqBHM9VAYItoUQDQgAEXi1Fo4RreqNuDZlHmCKfII93S+YpKeN5fXgQt2aG/G66UKklbEweWvjRbbaXYA/zLYaEpOTisvjguwKUKOVhCQ=="
+	//KeyInput.Text = "MHcCAQEEIP7J6j7OktAgLXGxKXNkD11Ua/Int8FyOpou21ClJ86JoAoGCCqBHM9VAYItoUQDQgAEXi1Fo4RreqNuDZlHmCKfII93S+YpKeN5fXgQt2aG/G66UKklbEweWvjRbbaXYA/zLYaEpOTisvjguwKUKOVhCQ=="
 	// 创建输出框，供用户输入数据
 	output := widget.NewMultiLineEntry()
 	output.Hide()
