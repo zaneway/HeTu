@@ -1,4 +1,5 @@
 #!/bin/bash
+# 需要安装 mingw-w64
 dir=$(pwd)
 go mod tidy
 echo 准备删除 $dir/CertViewer.exe
