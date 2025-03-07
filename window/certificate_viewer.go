@@ -75,7 +75,7 @@ func buildCertificateDetail(certificate *Certificate) (keys []string, certDetail
 	certDetail[keys[4]] = certificate.NotAfter.String()
 	//PublicKeyAlgorithm
 	certDetail[keys[5]] = base64.StdEncoding.EncodeToString(certificate.RawSubjectPublicKeyInfo)
-	//PublicKey
+	//PublicKey Alg
 	certDetail[keys[6]] = ParsePublicKeyAlg(certificate.PublicKeyAlgorithm)
 	//SignatureAlgorithm
 	//.String()被重构
