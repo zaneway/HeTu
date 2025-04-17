@@ -11,7 +11,10 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/zaneway/cain-go/pkcs12"
+	"github.com/zaneway/cain-go/sm2"
 	"github.com/zaneway/cain-go/x509"
+	"math/big"
 )
 
 func SM2EnvelopedPfxStructure(input *widget.Entry) *fyne.Container {
@@ -56,8 +59,13 @@ func SM2EnvelopedPfxStructure(input *widget.Entry) *fyne.Container {
 			return
 		}
 		base64PublicKey := base64.StdEncoding.EncodeToString(publicKey)
-		base64PrivateKey := base64.StdEncoding.EncodeToString(privateKey)
 
+		priKey := sm2.PrivateKey{
+			D: new(big.Int).SetBytes(privateKey),
+		}
+		key := pkcs12.BuildPrivateKeyInfoNoPublicKey(&priKey, pkcs12.OidNamedCurveP256SM2)
+		privateKey, _ = asn1.Marshal(key)
+		base64PrivateKey := base64.StdEncoding.EncodeToString(privateKey)
 		output.Text = fmt.Sprintf("publicKey:%s\nprivateKey:%s", base64PublicKey, base64PrivateKey)
 		output.Show()
 	})
@@ -100,7 +108,7 @@ func DecryptSM2EnvelopedKey(data []byte, signPrivateKey []byte) ([]byte, []byte,
 	if err != nil {
 		return nil, nil, err
 	}
-	//对称密钥解密加密密钥对私钥
+	//对称密钥 解密 加密密钥对私钥
 	encPrivateKey, err := gm.DecryptDataUseSm4Key(sm2EnvelopedKey.Sm2EncryptedPrivateKey.Bytes, sm4Key)
 	if err != nil {
 		return nil, nil, err

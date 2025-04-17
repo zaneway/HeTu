@@ -5,7 +5,7 @@ go 1.20
 require (
 	fyne.io/fyne/v2 v2.5.4
 	github.com/lengzhao/font v0.1.0
-	github.com/zaneway/cain-go v1.0.0-M2
+	github.com/zaneway/cain-go v1.0.0-M5
 )
 
 replace github.com/davecgh/go-spew v1.1.1 => github.com/davecgh/go-spew v1.1.0
