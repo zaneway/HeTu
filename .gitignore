@@ -337,7 +337,9 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-!/CertViewer.dmg
+!/*.dmg
+!/*.exe
 !/go.sum
 !/MacOS-App/
-!/HeTu.dmg
+!/HeTu.app/
+
