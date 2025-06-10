@@ -52,7 +52,7 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	indentedContent := container.NewHBox(
 		widget.NewLabelWithStyle("", fyne.TextAlignLeading, fyne.TextStyle{}), // 占位符保持布局
 		//实际的值
-		container.NewMax(container.NewGridWrap(indentation), widget.NewLabel(node.Value)), // 缩进的Label
+		container.NewMax(container.NewGridWrap(indentation), widget.NewLabel("("+fmt.Sprintf("%d", (len(node.Value)+1)/2)+")"+node.Value)), // 缩进的Label
 	)
 
 	item := widget.NewAccordionItem(fmt.Sprintf("%s :", value), indentedContent)
