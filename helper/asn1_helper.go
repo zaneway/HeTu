@@ -75,7 +75,7 @@ func ParseAsn1(data []byte) ASN1Node {
 	//len
 	thisNode.Length = len(node.FullBytes)
 	//
-	if node.IsCompound {
+	if node.IsCompound || IsCompound(node) {
 		thisNodeValue := node.Bytes
 		for len(thisNodeValue) > 0 {
 			childrenNode := ParseAsn1(thisNodeValue)
@@ -90,6 +90,16 @@ func ParseAsn1(data []byte) ASN1Node {
 	thisNode.FullBytes = node.FullBytes
 	thisNode.Value = buildAsn1Value(thisNode)
 	return thisNode
+}
+
+func IsCompound(node asn1.RawValue) bool {
+	var nodeNext asn1.RawValue
+	//将输入转为base64
+	_, err := asn1.Unmarshal(node.Bytes, &nodeNext)
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func buildAsn1Value(node ASN1Node) (data string) {
