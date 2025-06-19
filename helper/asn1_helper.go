@@ -78,6 +78,7 @@ func ParseAsn1(data []byte) ASN1Node {
 	if node.IsCompound || IsCompound(node) {
 		thisNodeValue := node.Bytes
 		for len(thisNodeValue) > 0 {
+			//todo 这里有个bug，thisNodeValue可能长度不等于node.Bytes
 			childrenNode := ParseAsn1(thisNodeValue)
 			thisNode.Children = append(thisNode.Children, &childrenNode)
 			//上面可能只截取了第一段结构
