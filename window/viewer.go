@@ -58,39 +58,39 @@ func newBody() *fyne.Container {
 // 创建美化的表头
 func createHeader() *fyne.Container {
 	// 项目标题
-	titleLabel := widget.NewLabelWithStyle("🔐 HeTu 密码学工具箱", fyne.TextAlignCenter, fyne.TextStyle{
+	titleLabel := widget.NewLabelWithStyle("🔐 HeTu", fyne.TextAlignCenter, fyne.TextStyle{
 		Bold: true,
 	})
 	titleLabel.TextStyle.Bold = true
 
 	// 副标题
-	subTitle := widget.NewLabelWithStyle("可视化密码学操作平台", fyne.TextAlignCenter, fyne.TextStyle{
-		Italic: true,
-	})
+	//subTitle := widget.NewLabelWithStyle("可视化密码学操作平台", fyne.TextAlignCenter, fyne.TextStyle{
+	//	Italic: true,
+	//})
 
 	// GitHub链接
 	url, _ := url.Parse("https://github.com/zaneway/HeTu")
-	githubLink := widget.NewHyperlink("🌟 访问项目主页（全球最大的同性交友网站）", url)
+	githubLink := widget.NewHyperlink("🌟 访问全球最大的同性交友网站（项目主页）", url)
 
 	// 时间显示
 	timeLabel := refreshTimeSeconds()
 	timeLabel.TextStyle = fyne.TextStyle{Monospace: true}
 
 	// 表头布局
-	headerTop := container.NewVBox(
-		titleLabel,
-		subTitle,
-	)
+	//headerTop := container.NewVBox(
+	//	titleLabel,
+	//	subTitle,
+	//)
 
 	headerBottom := container.NewBorder(
 		nil, nil,
 		container.NewCenter(githubLink),
 		timeLabel,
-		widget.NewSeparator(),
+		nil, // 移除中心位置的分隔线
 	)
 
 	headerContainer := container.NewVBox(
-		container.NewPadded(headerTop),
+		//container.NewPadded(headerTop),
 		headerBottom,
 	)
 
