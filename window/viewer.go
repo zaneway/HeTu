@@ -2,6 +2,9 @@ package window
 
 import (
 	"HeTu/util"
+	"net/url"
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -9,8 +12,6 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/lengzhao/font/autoload" //这个可以让你识别中文
-	"net/url"
-	"time"
 )
 
 func NewWindow() {
@@ -35,6 +36,9 @@ func newBody() *fyne.Container {
 	//搞一个公共输入框
 	input := widget.NewMultiLineEntry()
 	input.SetPlaceHolder("Please input base64/hex data")
+	input.Wrapping = fyne.TextWrapWord
+	// 设置输入框的最小高度，确保长文本能够正常显示
+	input.Resize(fyne.NewSize(400, 120))
 	//build tab
 	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon("coder", theme.ZoomInIcon(), CoderStructure(input)),

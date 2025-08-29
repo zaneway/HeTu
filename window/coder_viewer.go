@@ -4,19 +4,25 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"strings"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"strings"
 )
 
 func CoderStructure(input *widget.Entry) *fyne.Container {
 	// 创建输出框，供用户输入数据
 	output := widget.NewMultiLineEntry()
+	output.Wrapping = fyne.TextWrapWord
+	// 设置输出框的最小高度，确保长文本能够正常显示
+	output.Resize(fyne.NewSize(400, 120))
 	output.Hide()
 	input.SetPlaceHolder("Please input base64/hex data")
+	// 为公共输入框也设置最小高度
+	input.Wrapping = fyne.TextWrapWord
 	dataLenPrint := widget.NewLabel("")
 	// 解析按钮
 	confirmButton := widget.NewButtonWithIcon("确认", theme.ConfirmIcon(), func() {
@@ -53,7 +59,10 @@ func CoderStructure(input *widget.Entry) *fyne.Container {
 	// 布局
 	allButton := container.New(layout.NewGridLayout(2), confirmButton, cancelButton)
 	vbox := container.NewVBox(input, allButton, dataLenPrint, output)
+	// 使用带滚动条的容器包装
+	scrollContainer := container.NewScroll(vbox)
+	scrollContainer.SetMinSize(fyne.NewSize(400, 300))
 
-	return vbox
+	return container.NewMax(scrollContainer)
 
 }

@@ -2,6 +2,7 @@ package helper
 
 import (
 	"fmt"
+
 	gm "github.com/zaneway/cain-go/x509"
 )
 
@@ -19,9 +20,13 @@ func init() {
 }
 
 func ParseCertificate(cert []byte) (*gm.Certificate, error) {
+	if len(cert) == 0 {
+		return nil, fmt.Errorf("证书数据为空")
+	}
+
 	certificate, err := gm.ParseCertificate(cert)
 	if err != nil {
-		fmt.Println(err)
+		return nil, fmt.Errorf("解析证书失败: %v", err)
 	}
 	return certificate, nil
 }

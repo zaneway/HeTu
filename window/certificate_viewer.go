@@ -4,8 +4,13 @@ import (
 	"HeTu/helper"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/pem"
+	"fmt"
+	"strings"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -17,28 +22,61 @@ func CertificateStructure(input *widget.Entry) *fyne.Container {
 	structure := container.NewVBox()
 	detail := container.NewVBox()
 	input.Wrapping = fyne.TextWrapWord
+	// 为公共输入框设置适当的高度
 	//input := buildInputCertEntry("Please input base64/hex cert")
 
 	//inputCertEntry.Text = "MIICETCCAbWgAwIBAgINKl81oFaaablKOp0YTjAMBggqgRzPVQGDdQUAMGExCzAJBgNVBAYMAkNOMQ0wCwYDVQQKDARCSkNBMSUwIwYDVQQLDBxCSkNBIEFueXdyaXRlIFRydXN0IFNlcnZpY2VzMRwwGgYDVQQDDBNUcnVzdC1TaWduIFNNMiBDQS0xMB4XDTIwMDgxMzIwMTkzNFoXDTIwMTAyNDE1NTk1OVowHjELMAkGA1UEBgwCQ04xDzANBgNVBAMMBuWGr+i9rDBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABAIF97Sqq0Rv616L2PjFP3xt16QGJLmi+W8Ht+NLHiXntgUey0Nz+ZVnSUKUMzkKuGTikY3h2v7la20b6lpKo8WjgZIwgY8wCwYDVR0PBAQDAgbAMB0GA1UdDgQWBBSxiaS6z4Uguz3MepS2zblkuAF/LTAfBgNVHSMEGDAWgBTMZyRCGsP4rSes0vLlhIEf6cUvrjBABgNVHSAEOTA3MDUGCSqBHIbvMgICAjAoMCYGCCsGAQUFBwIBFhpodHRwOi8vd3d3LmJqY2Eub3JnLmNuL2NwczAMBggqgRzPVQGDdQUAA0gAMEUCIG6n6PG0BOK1EdFcvetQlC+9QhpsTuTui2wkeqWiPKYWAiEAvqR8Z+tSiYR5DIs7SyHJPWZ+sa8brtQL/1jURvHGxU8="
 	//确认按钮
 	confirm := buildButton("确认", theme.ConfirmIcon(), func() {
-		inputCert := input.Text
-		detail.RemoveAll()
-		decodeCert, err := base64.StdEncoding.DecodeString(inputCert)
-		if err != nil {
-			decodeCert, err = hex.DecodeString(inputCert)
-			if err != nil {
-				fyne.LogError("解析请求错误", err)
-				return
-			}
-		}
-		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
-		certificate, err := ParseCertificate(decodeCert)
-		if err != nil {
-			fyne.LogError("解析证书错误", err)
+		inputCert := strings.TrimSpace(input.Text)
+		if inputCert == "" {
+			dialog.ShowError(fmt.Errorf("请输入证书数据"), fyne.CurrentApp().Driver().AllWindows()[0])
 			return
 		}
+
+		detail.RemoveAll()
+
+		// 尝试Base64解码
+		var decodeCert []byte
+		var err error
+
+		// 检查是否是PEM格式
+		if strings.Contains(inputCert, "-----BEGIN CERTIFICATE-----") {
+			// 处理PEM格式证书
+			decodeCert, err = parsePEMCertificate(inputCert)
+			if err != nil {
+				dialog.ShowError(fmt.Errorf("PEM格式证书解析失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
+				return
+			}
+		} else {
+			// 清理输入数据，移除空格和换行符
+			cleanedInput := cleanInputData(inputCert)
+
+			// 尝试Base64解码
+			decodeCert, err = base64.StdEncoding.DecodeString(cleanedInput)
+			if err != nil {
+				// 如果Base64失败，尝试Hex解码
+				decodeCert, err = hex.DecodeString(cleanedInput)
+				if err != nil {
+					dialog.ShowError(fmt.Errorf("无法解码输入数据，请确保输入的是有效的Base64、Hex或PEM格式证书数据\n\n输入数据长度: %d\n清理后数据长度: %d\n\nBase64错误: %v\nHex错误: %v", len(inputCert), len(cleanedInput), err, err), fyne.CurrentApp().Driver().AllWindows()[0])
+					return
+				}
+			}
+		}
+
+		// 验证解码后的数据长度
+		if len(decodeCert) < 50 { // 证书通常至少有几百字节
+			dialog.ShowError(fmt.Errorf("解码后的数据太短（%d 字节），不像是有效的证书数据", len(decodeCert)), fyne.CurrentApp().Driver().AllWindows()[0])
+			return
+		}
+
+		// 解析证书
+		certificate, err := helper.ParseCertificate(decodeCert)
+		if err != nil {
+			dialog.ShowError(fmt.Errorf("证书解析失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
+			return
+		}
+
 		//构造证书解析详情
 		keys, value := buildCertificateDetail(certificate)
 
@@ -56,7 +94,11 @@ func CertificateStructure(input *widget.Entry) *fyne.Container {
 	structure.Add(input)
 	structure.Add(allButton)
 	structure.Add(detail)
-	return structure
+
+	// 使用带滚动条的容器包装
+	scrollContainer := container.NewScroll(structure)
+	scrollContainer.SetMinSize(fyne.NewSize(600, 400))
+	return container.NewMax(scrollContainer)
 }
 
 func buildCertificateDetail(certificate *Certificate) (keys []string, certDetail map[string]string) {
@@ -108,6 +150,8 @@ func showCertificateDetail(orderKeys []string, certDetail map[string]string, box
 		value := widget.NewEntry()
 		if len(data) > 100 {
 			value = widget.NewMultiLineEntry()
+			// 为多行输入框设置最小高度
+			value.Resize(fyne.NewSize(400, 100))
 		}
 		value.Wrapping = fyne.TextWrapWord
 		value.SetText(data)
@@ -137,4 +181,33 @@ func buildButton(data string, icon fyne.Resource, fun func()) *widget.Button {
 	}
 	button := widget.NewButtonWithIcon(data, icon, fun)
 	return button
+}
+
+// parsePEMCertificate 解析PEM格式证书
+func parsePEMCertificate(pemData string) ([]byte, error) {
+	// 清理输入数据，移除多余的空格和换行
+	pemData = strings.TrimSpace(pemData)
+
+	// 解析PEM块
+	block, _ := pem.Decode([]byte(pemData))
+	if block == nil {
+		return nil, fmt.Errorf("无法解析PEM数据，请检查格式是否正确")
+	}
+
+	// 检查PEM块类型
+	if block.Type != "CERTIFICATE" {
+		return nil, fmt.Errorf("PEM块类型不正确，期望为CERTIFICATE，实际为: %s", block.Type)
+	}
+
+	return block.Bytes, nil
+}
+
+// cleanInputData 清理输入数据，移除可能影响解析的字符
+func cleanInputData(input string) string {
+	// 移除所有空格、换行符、制表符等空白字符
+	cleaned := strings.ReplaceAll(input, " ", "")
+	cleaned = strings.ReplaceAll(cleaned, "\n", "")
+	cleaned = strings.ReplaceAll(cleaned, "\r", "")
+	cleaned = strings.ReplaceAll(cleaned, "\t", "")
+	return strings.TrimSpace(cleaned)
 }
