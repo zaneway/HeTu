@@ -4,6 +4,7 @@ import (
 	"HeTu/helper"
 	"encoding/base64"
 	"encoding/hex"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
@@ -15,7 +16,7 @@ import (
 
 // 输入证书、私钥、密码，生成pfx文件
 func TimestampStructure(input *widget.Entry) *fyne.Container {
-	input = widget.NewMultiLineEntry()
+	// 使用共享的输入框，不重新创建
 	input.SetPlaceHolder("Please input base64/hex cert")
 	input.Refresh()
 	structure := container.NewVBox()

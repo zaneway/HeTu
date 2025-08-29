@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"math/big"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
@@ -14,11 +16,10 @@ import (
 	"github.com/zaneway/cain-go/pkcs12"
 	"github.com/zaneway/cain-go/sm2"
 	"github.com/zaneway/cain-go/x509"
-	"math/big"
 )
 
 func SM2EnvelopedPfxStructure(input *widget.Entry) *fyne.Container {
-	input = widget.NewMultiLineEntry()
+	// 使用共享的输入框，不重新创建
 	input.SetPlaceHolder("Please input base64/hex enveloped(GMT-0009)")
 	input.Refresh()
 	input.Wrapping = fyne.TextWrapWord
