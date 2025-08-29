@@ -56,9 +56,9 @@ func CoderStructure(input *widget.Entry) *fyne.Container {
 		input.Refresh()
 		output.Refresh()
 	})
-	// 布局
+	// 布局 - 不添加全局输入框，它已经在主界面的固定位置
 	allButton := container.New(layout.NewGridLayout(2), confirmButton, cancelButton)
-	vbox := container.NewVBox(input, allButton, dataLenPrint, output)
+	vbox := container.NewVBox(allButton, dataLenPrint, output)
 	// 使用带滚动条的容器包装
 	scrollContainer := container.NewScroll(vbox)
 	scrollContainer.SetMinSize(fyne.NewSize(400, 300))

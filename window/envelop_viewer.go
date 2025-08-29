@@ -80,11 +80,14 @@ func SM2EnvelopedPfxStructure(input *widget.Entry) *fyne.Container {
 
 	//对所有按钮进行表格化
 	allButton := container.New(layout.NewGridLayout(2), confirm, clear)
-	structure.Add(input)
+	// 不添加全局输入框，它已经在主界面的固定位置
+	// structure.Add(input)
 	structure.Add(KeyInput)
 	structure.Add(allButton)
 	structure.Add(output)
-	return structure
+	// 使用滚动容器支持长内容
+	scrollContainer := container.NewScroll(structure)
+	return container.NewMax(scrollContainer)
 }
 
 // 解析信封

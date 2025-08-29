@@ -120,9 +120,9 @@ func CrlStructure(input *widget.Entry) *fyne.Container {
 	buttonRow1 := container.New(layout.NewGridLayout(1), selectFileBtn)
 	buttonRow2 := container.New(layout.NewGridLayout(2), verifyBtn, clear)
 
-	// 组装界面
-	structure.Add(widget.NewLabel("CRL数据输入:"))
-	structure.Add(input)
+	// 组装界面 - 不添加全局输入框，它已经在主界面的固定位置
+	// structure.Add(widget.NewLabel("CRL数据输入:"))
+	// structure.Add(input)
 	structure.Add(buttonRow1)
 	structure.Add(widget.NewSeparator())
 	structure.Add(widget.NewLabel("证书序列号:"))
@@ -134,7 +134,9 @@ func CrlStructure(input *widget.Entry) *fyne.Container {
 	structure.Add(widget.NewLabel("验证结果:"))
 	structure.Add(output)
 
-	return structure
+	// 使用滚动容器支持长内容
+	scrollContainer := container.NewScroll(structure)
+	return container.NewMax(scrollContainer)
 }
 
 // displayCRLDetails 显示CRL详细信息
