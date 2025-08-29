@@ -178,9 +178,6 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 }
 
 func Asn1Structure(input *widget.Entry) *fyne.Container {
-	// 为公共输入框设置最优配置
-	input.Wrapping = fyne.TextWrapWord
-
 	// 创建状态显示标签
 	statusLabel := widget.NewLabel("准备解析ASN.1数据...")
 	statusLabel.TextStyle = fyne.TextStyle{Italic: true}
@@ -193,10 +190,11 @@ func Asn1Structure(input *widget.Entry) *fyne.Container {
 	statsContainer := container.NewVBox()
 	statsContainer.Hide()
 
-	//创建Accordion组件
+	// 创建Accordion组件
 	accordion := widget.NewAccordion()
 	var rootAccordionItem *widget.AccordionItem
-	// 异步解析按钮，添加进度提示
+
+	// 解析按钮
 	confirmButton := widget.NewButtonWithIcon("🔍 解析ASN.1", theme.ConfirmIcon(), func() {
 		inputData := strings.TrimSpace(input.Text)
 		if inputData == "" {
@@ -211,7 +209,7 @@ func Asn1Structure(input *widget.Entry) *fyne.Container {
 
 		// 异步处理以避免UI阻塞
 		go func() {
-			time.Sleep(time.Millisecond * 100) // 给UI时间更新
+			time.Sleep(time.Millisecond * 100)
 
 			// 预处理检查
 			if len(inputData) > 5*1024*1024 {
@@ -261,7 +259,7 @@ func Asn1Structure(input *widget.Entry) *fyne.Container {
 			statusLabel.SetText("正在构建树状视图...")
 			progressBar.SetValue(0.9)
 
-			// 回到主线程更新UI
+			// 更新UI
 			rootAccordionItem = buildAccordion(rootNode, 0)
 			if accordion.Items != nil && len(accordion.Items) > 0 {
 				accordion.RemoveIndex(0)
@@ -273,11 +271,11 @@ func Asn1Structure(input *widget.Entry) *fyne.Container {
 			maxDepth := getMaxDepth(rootNode)
 
 			statsInfo := widget.NewRichTextFromMarkdown(fmt.Sprintf(
-				"### 📊 解析统计\n\n"+
-					"- **数据大小**: %d 字节\n"+
-					"- **节点总数**: %d\n"+
-					"- **最大深度**: %d\n"+
-					"- **根节点类型**: %s\n",
+				"📊 **解析统计**\n\n"+
+					"- 数据大小: %d 字节\n"+
+					"- 节点总数: %d\n"+
+					"- 最大深度: %d\n"+
+					"- 根节点类型: %s",
 				len(decodedData), childrenCount, maxDepth, getRealTag(rootNode.Tag)))
 
 			statsContainer.RemoveAll()
@@ -294,7 +292,8 @@ func Asn1Structure(input *widget.Entry) *fyne.Container {
 			}
 		}()
 	})
-	//清除按钮
+
+	// 清除按钮
 	cancelButton := buildButton("🗑️ 清除", theme.CancelIcon(), func() {
 		input.SetText("")
 		if accordion.Items != nil && len(accordion.Items) > 0 {
@@ -305,26 +304,22 @@ func Asn1Structure(input *widget.Entry) *fyne.Container {
 		progressBar.Hide()
 	})
 
-	// 布局
+	// 按钮布局
 	buttonContainer := container.New(layout.NewGridLayout(2), confirmButton, cancelButton)
-	topContainer := container.NewVBox(
-		widget.NewLabelWithStyle("🔐 ASN.1 结构解析器", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
-		widget.NewSeparator(),
-		input,
+
+	// 主要内容区域
+	content := container.NewVBox(
 		buttonContainer,
 		statusLabel,
 		progressBar,
 		statsContainer,
 		widget.NewSeparator(),
+		accordion,
 	)
 
-	// 使用带滚动条的容器包装整个布局
-	mainContainer := container.NewBorder(topContainer, nil, nil, nil, accordion)
-	scrollContainer := container.NewScroll(mainContainer)
-	scrollContainer.SetMinSize(fyne.NewSize(700, 500))
-
+	// 使用滚动容器支持长内容
+	scrollContainer := container.NewScroll(content)
 	return container.NewMax(scrollContainer)
-
 }
 
 func getRealTag(tag int) string {

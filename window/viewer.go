@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/lengzhao/font/autoload" //这个可以让你识别中文
@@ -16,48 +15,156 @@ import (
 
 func NewWindow() {
 	myApp := app.New()
+	// 设置应用主题为深色主题
+	myApp.Settings().SetTheme(theme.DefaultTheme())
+
 	// 创建一个窗口对象
-	myWindow := myApp.NewWindow("zaneway`s Tools of HeTu")
+	myWindow := myApp.NewWindow("🔐 HeTu - 密码学工具箱")
+	// 设置窗口图标（可选）
+	// myWindow.SetIcon(resourceIconPng)
+
 	body := newBody()
 	myWindow.SetContent(body)
-	myWindow.Resize(fyne.Size{800, 600})
+	myWindow.Resize(fyne.Size{1000, 700}) // 增大窗口尺寸
+	myWindow.CenterOnScreen()             // 窗口居中显示
 	myWindow.ShowAndRun()
-
 }
 
 func newBody() *fyne.Container {
-	// 表头
-	url, _ := url.Parse("https://github.com/zaneway/HeTu")
-	link := widget.NewHyperlink("^-^  欢迎访问全球最大的同性交友网站  ^-^", url)
-	//超链接显示在中间
-	centerLink := container.NewCenter(link)
-	//时间显示在最右侧
-	rightTime := container.NewHBox(layout.NewSpacer(), refreshTimeSeconds())
-	//搞一个公共输入框
-	input := widget.NewMultiLineEntry()
-	input.SetPlaceHolder("Please input base64/hex data")
-	input.Wrapping = fyne.TextWrapWord
-	// 设置输入框的最小高度，确保长文本能够正常显示
-	input.Resize(fyne.NewSize(400, 120))
-	//build tab
-	tabs := container.NewAppTabs(
-		container.NewTabItemWithIcon("coder", theme.ZoomInIcon(), CoderStructure(input)),
-		container.NewTabItemWithIcon("certificate", theme.InfoIcon(), CertificateStructure(input)),
-		container.NewTabItemWithIcon("asn1", theme.ZoomInIcon(), Asn1Structure(input)),
-		container.NewTabItemWithIcon("key", theme.ColorChromaticIcon(), KeyStructure(input)),
-		container.NewTabItemWithIcon("envelop", theme.FolderIcon(), SM2EnvelopedPfxStructure(input)),
-		container.NewTabItemWithIcon("p12", theme.AccountIcon(), SM2PfxStructure(input)),
-		//container.NewTabItemWithIcon("timestamp", theme.AccountIcon(), TimestampStructure(input)),
-		container.NewTabItemWithIcon("crl", theme.AccountIcon(), CrlStructure(input)),
-	)
-	//填充布局
-	body := container.NewVBox(
-		centerLink,
-		rightTime,
-		tabs,
-	)
-	return body
+	// 创建美化的表头区域
+	headerContainer := createHeader()
 
+	// 创建全局共享的输入框
+	sharedInput := createSharedInput()
+
+	// 创建主要内容区域（传入共享输入框）
+	mainContent := createMainContent(sharedInput)
+
+	// 创建底部状态栏
+	footerContainer := createFooter()
+
+	// 整体布局采用边框布局
+	body := container.NewBorder(
+		headerContainer, // 顶部
+		footerContainer, // 底部
+		nil,             // 左侧
+		nil,             // 右侧
+		mainContent,     // 中心内容
+	)
+
+	return body
+}
+
+// 创建美化的表头
+func createHeader() *fyne.Container {
+	// 项目标题
+	titleLabel := widget.NewLabelWithStyle("🔐 HeTu 密码学工具箱", fyne.TextAlignCenter, fyne.TextStyle{
+		Bold: true,
+	})
+	titleLabel.TextStyle.Bold = true
+
+	// 副标题
+	subTitle := widget.NewLabelWithStyle("可视化密码学操作平台", fyne.TextAlignCenter, fyne.TextStyle{
+		Italic: true,
+	})
+
+	// GitHub链接
+	url, _ := url.Parse("https://github.com/zaneway/HeTu")
+	githubLink := widget.NewHyperlink("🌟 访问项目主页（全球最大的同性交友网站）", url)
+
+	// 时间显示
+	timeLabel := refreshTimeSeconds()
+	timeLabel.TextStyle = fyne.TextStyle{Monospace: true}
+
+	// 表头布局
+	headerTop := container.NewVBox(
+		titleLabel,
+		subTitle,
+	)
+
+	headerBottom := container.NewBorder(
+		nil, nil,
+		container.NewCenter(githubLink),
+		timeLabel,
+		widget.NewSeparator(),
+	)
+
+	headerContainer := container.NewVBox(
+		container.NewPadded(headerTop),
+		headerBottom,
+	)
+
+	return headerContainer
+}
+
+// 创建全局共享的输入框
+func createSharedInput() *widget.Entry {
+	input := widget.NewMultiLineEntry()
+	input.SetPlaceHolder("📝 请输入 Base64/Hex 格式的数据进行解析...")
+	input.Wrapping = fyne.TextWrapWord
+	// 设置固定尺寸，防止移位
+	input.Resize(fyne.NewSize(0, 140)) // 宽度自适应，高度固定
+	return input
+}
+
+// 创建主要内容区域
+func createMainContent(sharedInput *widget.Entry) *fyne.Container {
+	// 输入框标签
+	inputLabel := widget.NewLabelWithStyle("📋 数据输入区域", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
+
+	// 输入框容器 - 使用固定布局
+	inputContainer := container.NewVBox(
+		inputLabel,
+		container.NewPadded(sharedInput),
+		widget.NewSeparator(),
+	)
+
+	// 创建美化的标签页
+	tabs := container.NewAppTabs(
+		container.NewTabItemWithIcon("🔄 编码转换", theme.ZoomInIcon(), CoderStructure(sharedInput)),
+		container.NewTabItemWithIcon("🏆 证书解析", theme.InfoIcon(), CertificateStructure(sharedInput)),
+		container.NewTabItemWithIcon("🌳 ASN.1结构", theme.ZoomInIcon(), Asn1Structure(sharedInput)),
+		container.NewTabItemWithIcon("🗝️ 密钥工具", theme.ColorChromaticIcon(), KeyStructure(sharedInput)),
+		container.NewTabItemWithIcon("📦 信封解析", theme.FolderIcon(), SM2EnvelopedPfxStructure(sharedInput)),
+		container.NewTabItemWithIcon("🎫 P12证书", theme.AccountIcon(), SM2PfxStructure(sharedInput)),
+		container.NewTabItemWithIcon("📜 CRL列表", theme.AccountIcon(), CrlStructure(sharedInput)),
+	)
+
+	// 设置标签页样式
+	tabs.SetTabLocation(container.TabLocationTop)
+
+	// 主要内容区域 - 使用Border布局分离输入框和标签页
+	mainContent := container.NewBorder(
+		inputContainer, // 顶部固定输入框
+		nil,            // 底部
+		nil,            // 左侧
+		nil,            // 右侧
+		tabs,           // 中心标签页内容
+	)
+
+	return container.NewPadded(mainContent)
+}
+
+// 创建底部状态栏
+func createFooter() *fyne.Container {
+	// 版本信息
+	versionLabel := widget.NewLabel("v1.0.0")
+	versionLabel.TextStyle = fyne.TextStyle{Italic: true}
+
+	// 状态信息
+	statusLabel := widget.NewLabel("✅ 就绪")
+	statusLabel.TextStyle = fyne.TextStyle{Monospace: true}
+
+	// 底部布局
+	footerContainer := container.NewBorder(
+		widget.NewSeparator(), // 顶部分隔线
+		nil,                   // 底部
+		versionLabel,          // 左侧版本信息
+		statusLabel,           // 右侧状态信息
+		widget.NewLabel("河图洛书 - 探索密码学的奥秘"), // 中心文本
+	)
+
+	return container.NewPadded(footerContainer)
 }
 
 func refreshTimeSeconds() *widget.Label {
