@@ -460,14 +460,6 @@ show_build_results() {
     
     if [ "$NSIS_AVAILABLE" = true ] && [ -f "$dir/HeTu-1.0.0-Setup.exe" ]; then
         echo "  📦 安装包: $dir/HeTu-1.0.0-Setup.exe"
-        echo
-        echo "安装包功能："
-        echo "  ✅ 支持自定义安装目录"
-        echo "  ✅ 创建桌面和开始菜单快捷方式"
-        echo "  ✅ 添加到系统PATH环境变量（可选）"
-        echo "  ✅ 完整的卸载功能"
-        echo "  ✅ 在控制面板显示程序信息"
-        echo "  ✅ 自动检测并卸载旧版本"
     fi
     
     echo
