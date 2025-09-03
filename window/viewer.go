@@ -119,6 +119,17 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 		widget.NewSeparator(),
 	)
 
+	// 定义各标签页的占位符文本
+	placeholders := map[string]string{
+		"🔄 编码转换":    "📝 请输入 Base64/Hex 格式的数据进行编码转换...",
+		"🏆 证书解析":    "📝 请输入 Base64/Hex 格式的证书数据进行解析...",
+		"🌳 ASN.1结构": "📝 请输入 Base64/Hex 格式的 ASN.1 数据进行解析...",
+		"🗝️ 密钥工具":   "📝 密钥生成工具 - 请在下方选择算法并生成密钥...",
+		"📦 信封解析":    "📝 请输入 Base64/Hex 格式的信封数据 (GMT-0009)...",
+		"🎫 P12证书":   "📝 请输入 Base64/Hex 格式的证书数据生成 PFX 文件...",
+		"📜 CRL列表":   "📝 请输入 Base64/Hex 格式的 CRL 数据，或点击'选择CRL文件'按钮...",
+	}
+
 	// 创建美化的标签页
 	tabs := container.NewAppTabs(
 		container.NewTabItemWithIcon("🔄 编码转换", theme.ZoomInIcon(), CoderStructure(sharedInput)),
@@ -132,6 +143,17 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 
 	// 设置标签页样式
 	tabs.SetTabLocation(container.TabLocationTop)
+
+	// 设置标签页切换时的占位符更新
+	tabs.OnSelected = func(tab *container.TabItem) {
+		if placeholder, exists := placeholders[tab.Text]; exists {
+			sharedInput.SetPlaceHolder(placeholder)
+			sharedInput.Refresh()
+		}
+	}
+
+	// 设置默认占位符（编码转换）
+	sharedInput.SetPlaceHolder(placeholders["🔄 编码转换"])
 
 	// 主要内容区域 - 使用Border布局分离输入框和标签页
 	mainContent := container.NewBorder(

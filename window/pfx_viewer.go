@@ -17,9 +17,7 @@ import (
 
 // 输入证书、私钥、密码，生成pfx文件
 func SM2PfxStructure(input *widget.Entry) *fyne.Container {
-	// 使用共享的输入框，不重新创建
-	input.SetPlaceHolder("Please input base64/hex cert")
-	input.Refresh()
+	// 移除占位符设置，由主界面统一管理
 	structure := container.NewVBox()
 	input.Wrapping = fyne.TextWrapWord
 	KeyInput := buildInputCertEntry("Please input base64/hex private key")

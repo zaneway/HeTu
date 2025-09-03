@@ -16,9 +16,7 @@ import (
 
 // CRL证书撤销列表解析和验证功能
 func CrlStructure(input *widget.Entry) *fyne.Container {
-	// 使用共享的输入框，不重新创建
-	input.SetPlaceHolder("请输入base64/hex格式的CRL数据，或点击'选择CRL文件'按钮")
-	input.Refresh()
+	// 移除占位符设置，由主界面统一管理
 	structure := container.NewVBox()
 	input.Wrapping = fyne.TextWrapWord
 	certSNInput := buildInputCertEntry("请输入要验证的证书序列号")

@@ -20,7 +20,7 @@ func CoderStructure(input *widget.Entry) *fyne.Container {
 	// 设置输出框的最小高度，确保长文本能够正常显示
 	output.Resize(fyne.NewSize(400, 120))
 	output.Hide()
-	input.SetPlaceHolder("Please input base64/hex data")
+	// 移除占位符设置，由主界面统一管理
 	// 为公共输入框也设置最小高度
 	input.Wrapping = fyne.TextWrapWord
 	dataLenPrint := widget.NewLabel("")

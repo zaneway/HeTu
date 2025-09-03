@@ -19,9 +19,7 @@ import (
 )
 
 func SM2EnvelopedPfxStructure(input *widget.Entry) *fyne.Container {
-	// 使用共享的输入框，不重新创建
-	input.SetPlaceHolder("Please input base64/hex enveloped(GMT-0009)")
-	input.Refresh()
+	// 移除占位符设置，由主界面统一管理
 	input.Wrapping = fyne.TextWrapWord
 	//input.Text = "MIHxMAwGCCqBHM9VAWgBBQAwegIhAMn/+ClYld5HKOj5JFdYZz8J4INMb+xT64hE5vnn+uFNAiEA/x7Zs47KTpO3DVJBQF9ccegoIYLEbBsRdPV3vy+yqg8EIDQPDQXzf2I0GvERWZuYPxTl0635mJOesnFPD+Wj1AO2BBBfllNH03r8WZ2cvK3tlACxA0IABBRwHZgGMVEB2SnMRxGWmHnP0pwRLE8M1X4b9G47345dpVTkML5kbrde6OufsBIFLfLfGcrydVkeXRt3AY1uH40DIQCUyF3nhuu+9ibomzX4IcwcArNBOBiSoY9fe16RLZLJOg=="
 	structure := container.NewVBox()
