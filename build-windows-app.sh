@@ -80,14 +80,54 @@ build_executable() {
     fi
 }
 
+# 转换PNG图标为ICO格式
+convert_icon() {
+    local dir=$(pwd)
+    local png_icon="$dir/Icon.png"
+    local ico_icon="$dir/dist/windows/Icon.ico"
+    
+    if [ -f "$png_icon" ]; then
+        print_info "检查图标转换工具..."
+        
+        # 检查是否有ImageMagick
+        if command -v convert &> /dev/null; then
+            print_info "使用ImageMagick转换PNG为ICO格式..."
+            convert "$png_icon" -resize 256x256 "$ico_icon"
+            if [ $? -eq 0 ]; then
+                print_success "图标转换完成: $ico_icon"
+                return 0
+            else
+                print_warning "ImageMagick转换失败，将复制原PNG文件"
+            fi
+        else
+            print_warning "ImageMagick未安装，建议安装: brew install imagemagick"
+        fi
+        
+        # 如果转换失败或没有ImageMagick，直接复制PNG
+        print_info "复制PNG图标文件..."
+        cp "$png_icon" "$dir/dist/windows/Icon.png"
+        return 1
+    else
+        print_warning "Icon.png文件不存在"
+        return 1
+    fi
+}
+
 # 创建NSIS安装脚本
 create_nsis_script() {
     local dir=$(pwd)
     local nsis_script="$dir/dist/windows/installer.nsi"
+    local has_ico_icon=false
+    
+    # 检查是否成功创建了ICO图标
+    if [ -f "$dir/dist/windows/Icon.ico" ]; then
+        has_ico_icon=true
+        print_info "将使用ICO格式图标"
+    fi
     
     print_info "创建NSIS安装脚本..."
     
-    cat > "$nsis_script" << 'EOF'
+    cat > "$nsis_script" << EOF
 ; HeTu 密码学工具箱 Windows 安装脚本
 ; 使用 NSIS 3.0+ 编译
 
@@ -100,10 +140,10 @@ create_nsis_script() {
 !define APP_EXE "HeTu.exe"
 
 ; 安装包属性
-Name "${APP_NAME} ${APP_VERSION}"
-OutFile "HeTu-${APP_VERSION}-Setup.exe"
-InstallDir "$PROGRAMFILES64\${APP_NAME}"
-InstallDirRegKey HKLM "Software\${APP_NAME}" "InstallDir"
+Name "\${APP_NAME} \${APP_VERSION}"
+OutFile "HeTu-\${APP_VERSION}-Setup.exe"
+InstallDir "\$PROGRAMFILES64\\\${APP_NAME}"
+InstallDirRegKey HKLM "Software\\\${APP_NAME}" "InstallDir"
 
 ; 请求管理员权限
 RequestExecutionLevel admin
@@ -117,8 +157,22 @@ SetCompressor lzma
 
 ; UI设置
 !define MUI_ABORTWARNING
-!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
-!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+EOF
+
+    # 根据是否有ICO图标设置不同的图标路径
+    if [ "$has_ico_icon" = true ]; then
+        cat >> "$nsis_script" << EOF
+!define MUI_ICON "Icon.ico"
+!define MUI_UNICON "Icon.ico"
+EOF
+    else
+        cat >> "$nsis_script" << EOF
+!define MUI_ICON "\${NSISDIR}\\Contrib\\Graphics\\Icons\\modern-install.ico"
+!define MUI_UNICON "\${NSISDIR}\\Contrib\\Graphics\\Icons\\modern-uninstall.ico"
+EOF
+    fi
+
+    cat >> "$nsis_script" << 'EOF'
 
 ; 安装页面
 !insertmacro MUI_PAGE_WELCOME
@@ -285,6 +339,24 @@ Section "!核心程序" SecCore
     ; 安装主程序
     File "HeTu.exe"
     
+EOF
+
+    # 根据是否有ICO图标添加相应的文件
+    if [ "$has_ico_icon" = true ]; then
+        cat >> "$nsis_script" << EOF
+    ; 安装图标文件
+    File "Icon.ico"
+    File "Icon.png"
+EOF
+    else
+        cat >> "$nsis_script" << EOF
+    ; 安装图标文件
+    File "Icon.png"
+EOF
+    fi
+
+    cat >> "$nsis_script" << 'EOF'
+    
     ; 创建卸载程序
     WriteUninstaller "$INSTDIR\Uninstall.exe"
     
@@ -311,12 +383,48 @@ Section "!核心程序" SecCore
 SectionEnd
 
 Section "桌面快捷方式" SecDesktop
+EOF
+
+    # 根据是否有ICO图标设置不同的快捷方式创建方式
+    if [ "$has_ico_icon" = true ]; then
+        cat >> "$nsis_script" << 'EOF'
+    ; 优先使用Icon.ico作为图标，如果不存在则使用exe图标
+    IfFileExists "$INSTDIR\Icon.ico" 0 +3
+        CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\Icon.ico" 0
+        Goto +2
     CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
+EOF
+    else
+        cat >> "$nsis_script" << 'EOF'
+    ; 使用exe内置图标（PNG在快捷方式中显示效果不佳）
+    CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
+EOF
+    fi
+
+    cat >> "$nsis_script" << 'EOF'
 SectionEnd
 
 Section "开始菜单快捷方式" SecStartMenu
     CreateDirectory "$SMPROGRAMS\${APP_NAME}"
+EOF
+
+    # 根据是否有ICO图标设置不同的快捷方式创建方式
+    if [ "$has_ico_icon" = true ]; then
+        cat >> "$nsis_script" << 'EOF'
+    ; 优先使用Icon.ico作为图标，如果不存在则使用exe图标
+    IfFileExists "$INSTDIR\Icon.ico" 0 +3
+        CreateShortCut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\Icon.ico" 0
+        Goto +2
     CreateShortCut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
+EOF
+    else
+        cat >> "$nsis_script" << 'EOF'
+    ; 使用exe内置图标（PNG在快捷方式中显示效果不佳）
+    CreateShortCut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_EXE}" 0
+EOF
+    fi
+
+    cat >> "$nsis_script" << 'EOF'
     CreateShortCut "$SMPROGRAMS\${APP_NAME}\卸载 ${APP_NAME}.lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\Uninstall.exe" 0
 SectionEnd
 
@@ -358,6 +466,8 @@ Section "Uninstall"
     ; 删除程序文件
     Delete "$INSTDIR\${APP_EXE}"
     Delete "$INSTDIR\Uninstall.exe"
+    Delete "$INSTDIR\Icon.png"
+    Delete "$INSTDIR\Icon.ico"
     
     ; 删除快捷方式
     Delete "$DESKTOP\${APP_NAME}.lnk"
@@ -424,6 +534,9 @@ build_installer() {
         
         print_info "开始构建Windows安装包..."
         
+        # 转换并复制图标文件
+        convert_icon
+        
         # 进入构建目录
         cd "$dir/dist/windows"
         
@@ -468,6 +581,7 @@ show_build_results() {
     if [ "$NSIS_AVAILABLE" = true ] && [ -f "$dir/HeTu-1.0.0-Setup.exe" ]; then
         echo "  2. 安装后使用: 双击 HeTu-1.0.0-Setup.exe 进行安装"
     fi
+    
 }
 
 # 主函数
@@ -480,6 +594,7 @@ main() {
     build_executable
     
     if [ "$NSIS_AVAILABLE" = true ]; then
+        convert_icon
         create_nsis_script
         create_license_file
         build_installer
