@@ -21,7 +21,6 @@ import (
 func CertificateStructure(input *widget.Entry) *fyne.Container {
 	structure := container.NewVBox()
 	detail := container.NewVBox()
-	input.Wrapping = fyne.TextWrapWord
 	// 为公共输入框设置适当的高度
 	//input := buildInputCertEntry("Please input base64/hex cert")
 
@@ -366,13 +365,13 @@ func extractURLFromHex(hexData string, startIndex int) string {
 
 // 解析主题密钥标识符扩展项
 func parseSubjectKeyIdentifier(data []byte) string {
-	return "Key ID: " + hex.EncodeToString(data)
+	return hex.EncodeToString(data)
 }
 
 // 解析颁发机构密钥标识符扩展项
 func parseAuthorityKeyIdentifier(data []byte) string {
 	// 简化的解析，实际结构可能更复杂
-	return "Authority Key ID: " + hex.EncodeToString(data)
+	return hex.EncodeToString(data)
 }
 
 // 解析基本约束扩展项
@@ -388,12 +387,12 @@ func parseBasicConstraints(data []byte) string {
 // 解析密钥用法扩展项
 func parseKeyUsage(data []byte) string {
 	// 尝试解析密钥用法的ASN.1结构
-	result := fmt.Sprintf("Key Usage (Length: %d bytes)\n", len(data))
-
-	// 显示原始十六进制值
-	hexValue := hex.EncodeToString(data)
-	result += fmt.Sprintf("Raw Hex: %s\n\n", formatHexDisplay(hexValue))
-
+	//result := fmt.Sprintf("Key Usage (Length: %d bytes)\n", len(data))
+	//
+	//// 显示原始十六进制值
+	//hexValue := hex.EncodeToString(data)
+	//result += fmt.Sprintf("Raw Hex: %s\n\n", formatHexDisplay(hexValue))
+	var result string
 	// 尝试解析密钥用法的位图
 	keyUsage := parseKeyUsageBitmap(data)
 	if keyUsage != "" {
@@ -493,28 +492,25 @@ func parseExtendedKeyUsage(data []byte) string {
 	return "Extended Key Usage (Hex): " + hexValue
 }
 
-// 展示证书扩展项
-func showCertificateExtensions(orderKeys []string, certExtensions map[string]string, box *fyne.Container) {
-	// 添加一个分隔线和标题
-	box.Add(widget.NewSeparator())
-	extensionTitle := widget.NewLabel("Certificate Extensions:")
-	extensionTitle.TextStyle = fyne.TextStyle{Bold: true}
-	box.Add(extensionTitle)
-
+// 将证书详情以表格的形式添加在最后
+func showCertificateDetail(orderKeys []string, certDetail map[string]string, box *fyne.Container) {
 	for _, orderKey := range orderKeys {
 		key := widget.NewLabel(orderKey)
-		data := certExtensions[orderKey]
-		value := widget.NewEntry()
+		data := certDetail[orderKey]
+		var value *widget.Entry
 		if len(data) > 100 {
 			value = widget.NewMultiLineEntry()
+			value.Wrapping = fyne.TextWrapWord
 			// 为多行输入框设置最小高度
 			value.Resize(fyne.NewSize(400, 100))
+		} else {
+			value = widget.NewEntry()
+			// 不对单行Entry设置Wrapping属性，避免Fyne错误
 		}
-		value.Wrapping = fyne.TextWrapWord
 		value.SetText(data)
 		//防止值被修改
 		value.OnChanged = func(s string) {
-			text := certExtensions[key.Text]
+			text := certDetail[key.Text]
 			value.SetText(text)
 		}
 		realKey := container.New(layout.NewGridWrapLayout(fyne.Size{150, 30}), key)
@@ -539,22 +535,31 @@ func ParsePublicKeyAlg(alg PublicKeyAlgorithm) string {
 
 }
 
-// 将证书详情以表格的形式添加在最后
-func showCertificateDetail(orderKeys []string, certDetail map[string]string, box *fyne.Container) {
+// 展示证书扩展项
+func showCertificateExtensions(orderKeys []string, certExtensions map[string]string, box *fyne.Container) {
+	// 添加一个分隔线和标题
+	box.Add(widget.NewSeparator())
+	extensionTitle := widget.NewLabel("Certificate Extensions:")
+	extensionTitle.TextStyle = fyne.TextStyle{Bold: true}
+	box.Add(extensionTitle)
+
 	for _, orderKey := range orderKeys {
 		key := widget.NewLabel(orderKey)
-		data := certDetail[orderKey]
-		value := widget.NewEntry()
+		data := certExtensions[orderKey]
+		var value *widget.Entry
 		if len(data) > 100 {
 			value = widget.NewMultiLineEntry()
+			value.Wrapping = fyne.TextWrapWord
 			// 为多行输入框设置最小高度
 			value.Resize(fyne.NewSize(400, 100))
+		} else {
+			value = widget.NewEntry()
+			// 不对单行Entry设置Wrapping属性，避免Fyne错误
 		}
-		value.Wrapping = fyne.TextWrapWord
 		value.SetText(data)
 		//防止值被修改
 		value.OnChanged = func(s string) {
-			text := certDetail[key.Text]
+			text := certExtensions[key.Text]
 			value.SetText(text)
 		}
 		realKey := container.New(layout.NewGridWrapLayout(fyne.Size{150, 30}), key)
