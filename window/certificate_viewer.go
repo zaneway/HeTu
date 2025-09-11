@@ -180,8 +180,12 @@ func buildCertificateExtensions(certificate *Certificate) (keys []string, certEx
 			value = parseBasicConstraints(ext.Value)
 		case "2.5.29.15": // Key Usage
 			value = parseKeyUsage(ext.Value)
+		case "2.5.29.31": // CRL Distribution Points
+			value = parseCRLDistributionPoints(ext.Value)
 		case "2.5.29.37": // Extended Key Usage
 			value = parseExtendedKeyUsage(ext.Value)
+		case "1.3.6.1.5.5.7.1.1": // Authority Information Access
+			value = parseAuthorityInformationAccess(ext.Value)
 		default:
 			// 默认情况下，将扩展项的值转换为十六进制字符串
 			value = hex.EncodeToString(ext.Value)
@@ -203,12 +207,13 @@ func buildCertificateExtensions(certificate *Certificate) (keys []string, certEx
 
 // 解析证书策略扩展项
 func parseCertificatePolicies(data []byte) string {
+	var result string
 	// 尝试解析证书策略中的CPS URL
-	result := fmt.Sprintf("Certificate Policies (Length: %d bytes)\n", len(data))
-
-	// 显示原始十六进制值
-	hexValue := hex.EncodeToString(data)
-	result += fmt.Sprintf("Raw Hex: %s\n\n", formatHexDisplay(hexValue))
+	//result := fmt.Sprintf("Certificate Policies (Length: %d bytes)\n", len(data))
+	//
+	//// 显示原始十六进制值
+	//hexValue := hex.EncodeToString(data)
+	//result += fmt.Sprintf("Raw Hex: %s\n\n", formatHexDisplay(hexValue))
 
 	// 尝试解析ASN.1结构以提取CPS URL
 	cpsUrls := extractCPSUrls(data)
@@ -482,6 +487,63 @@ func parseKeyUsageBitmap(data []byte) string {
 	return ""
 }
 
+// 解析CRL分发点扩展项
+func parseCRLDistributionPoints(data []byte) string {
+	//result := fmt.Sprintf("CRL Distribution Points (Length: %d bytes)\n", len(data))
+	//
+	//// 显示原始十六进制值
+	//hexValue := hex.EncodeToString(data)
+	//result += fmt.Sprintf("Raw Hex: %s\n\n", formatHexDisplay(hexValue))
+	var result string
+	// 尝试解析ASN.1结构以提取CRL URL
+	crlUrls := extractCRLUrls(data)
+	if len(crlUrls) > 0 {
+		result += "CRL Distribution URLs:\n"
+		for i, url := range crlUrls {
+			result += fmt.Sprintf("  %d. %s\n", i+1, url)
+		}
+		result += "\n"
+	} else {
+		result += "未找到CRL URLs或解析失败\n\n"
+	}
+
+	// 添加解析说明
+	result += "解析说明:\n"
+	result += "CRL分发点扩展包含以下信息:\n"
+	result += "1. CRL分发点URL - 用于下载证书吊销列表\n"
+	result += "2. 可能包含多个分发点以提供冗余\n"
+
+	return result
+}
+
+// 从CRL分发点数据中提取URLs
+func extractCRLUrls(data []byte) []string {
+	var urls []string
+
+	// 将字节数据转换为十六进制字符串
+	hexData := hex.EncodeToString(data)
+
+	// 查找http://或https://模式
+	httpPattern := "687474703a2f2f"    // "http://"
+	httpsPattern := "68747470733a2f2f" // "https://"
+
+	// 查找所有可能的URL
+	urls = append(urls, findUrlsInHex(hexData, httpPattern)...)
+	urls = append(urls, findUrlsInHex(hexData, httpsPattern)...)
+
+	// 去重
+	uniqueUrls := []string{}
+	seen := make(map[string]bool)
+	for _, url := range urls {
+		if !seen[url] {
+			seen[url] = true
+			uniqueUrls = append(uniqueUrls, url)
+		}
+	}
+
+	return uniqueUrls
+}
+
 // 解析扩展密钥用法扩展项
 func parseExtendedKeyUsage(data []byte) string {
 	// 简化的解析
@@ -490,6 +552,575 @@ func parseExtendedKeyUsage(data []byte) string {
 		hexValue = hexValue[:1000] + "...(已截断)"
 	}
 	return "Extended Key Usage (Hex): " + hexValue
+}
+
+// 解析Authority Information Access扩展项
+func parseAuthorityInformationAccess(data []byte) string {
+	result := fmt.Sprintf("Authority Information Access (Length: %d bytes)\n", len(data))
+
+	// 显示原始十六进制值
+	hexValue := hex.EncodeToString(data)
+	result += fmt.Sprintf("Raw Hex: %s\n\n", formatHexDisplay(hexValue))
+
+	// 使用重新设计的解析器
+	parser := NewAuthorityInfoAccessParser(data)
+	accessInfos := parser.Parse()
+
+	if len(accessInfos) > 0 {
+		result += "Authority Access Information:\n"
+		for i, info := range accessInfos {
+			result += fmt.Sprintf("  %d. Method: %s\n", i+1, info.Method)
+			result += fmt.Sprintf("     Location: %s\n", info.Location)
+		}
+		result += "\n"
+	} else {
+		result += "未找到访问信息或解析失败\n\n"
+	}
+
+	// 添加解析说明
+	result += "解析说明:\n"
+	result += "Authority Information Access扩展包含以下信息:\n"
+	result += "1. 访问方法 - 如OCSP、CA Issuers等\n"
+	result += "2. 访问位置 - 对应的URL地址\n"
+	result += "3. 可能包含多个访问信息条目\n\n"
+
+	// 添加常见访问方法OID的说明
+	result += "常见访问方法OID:\n"
+	result += "- 1.3.6.1.5.5.7.48.1: OCSP (在线证书状态协议)\n"
+	result += "- 1.3.6.1.5.5.7.48.2: CA Issuers (CA证书颁发者)\n"
+
+	return result
+}
+
+// ParseAuthorityInformationAccessForTest 是parseAuthorityInformationAccess的导出版本，用于测试
+func ParseAuthorityInformationAccessForTest(data []byte) string {
+	return parseAuthorityInformationAccess(data)
+}
+
+// NewAuthorityInfoAccessParserForTest 是NewAuthorityInfoAccessParser的导出版本，用于测试
+func NewAuthorityInfoAccessParserForTest(data []byte) *AuthorityInfoAccessParser {
+	return NewAuthorityInfoAccessParser(data)
+}
+
+// AuthorityInfoAccessParser 用于解析Authority Information Access扩展
+type AuthorityInfoAccessParser struct {
+	data    []byte
+	hexData string
+}
+
+// AuthorityAccessInfo 存储访问信息
+type AuthorityAccessInfo struct {
+	Method   string
+	Location string
+}
+
+// NewAuthorityInfoAccessParser 创建新的解析器实例
+func NewAuthorityInfoAccessParser(data []byte) *AuthorityInfoAccessParser {
+	return &AuthorityInfoAccessParser{
+		data:    data,
+		hexData: hex.EncodeToString(data),
+	}
+}
+
+// Parse 解析Authority Information Access扩展
+func (p *AuthorityInfoAccessParser) Parse() []AuthorityAccessInfo {
+	var accessInfos []AuthorityAccessInfo
+
+	// 定义已知的访问方法OID
+	accessMethods := map[string]string{
+		"2b06010505073001": "OCSP",
+		"2b06010505073002": "CA Issuers",
+		"2b06010505073003": "Time Stamping",
+		"2b06010505073004": "CA Repository",
+	}
+
+	// 首先尝试使用ASN.1解析
+	accessInfos = p.parseWithASN1()
+
+	// 添加标志变量，记录ASN.1是否解析成功
+	asn1Parsed := len(accessInfos) > 0
+
+	// 只有当ASN.1解析失败或没有找到信息时，才使用回退方法
+	// 这样可以避免解析结果被覆盖的问题
+	if !asn1Parsed {
+		accessInfos = p.fallbackParsing(accessMethods)
+	}
+
+	// 去重
+	return p.deduplicate(accessInfos)
+}
+
+// parseWithASN1 使用ASN.1结构解析Authority Information Access扩展
+func (p *AuthorityInfoAccessParser) parseWithASN1() []AuthorityAccessInfo {
+	var accessInfos []AuthorityAccessInfo
+
+	// 确保数据不为空
+	if len(p.data) == 0 {
+		return accessInfos
+	}
+
+	// 查找SEQUENCE标记 (0x30) - AuthorityInfoAccessSyntax是SEQUENCE OF AccessDescription
+	if len(p.data) < 2 || p.data[0] != 0x30 {
+		return accessInfos
+	}
+
+	// 解析外层SEQUENCE长度
+	seqLen, lenBytes := p.parseLength(1)
+	// 改进长度检查逻辑：如果声明的长度超过实际数据长度，则使用实际数据长度
+	actualDataLen := len(p.data) - 1 - lenBytes
+	if seqLen <= 0 {
+		return accessInfos
+	} else if seqLen > actualDataLen {
+		// 如果声明的长度大于实际可用数据，使用实际数据长度
+		seqLen = actualDataLen
+	}
+
+	// 解析SEQUENCE中的AccessDescription条目
+	pos := 1 + lenBytes
+	endPos := 1 + lenBytes + seqLen
+
+	// 添加安全检查，防止无限循环
+	maxIterations := 100
+	iterations := 0
+
+	for pos < endPos && pos < len(p.data) && iterations < maxIterations {
+		// 解析单个AccessDescription
+		accessInfo := p.parseSingleAccessDescription(pos, endPos)
+		if accessInfo.Method != "" && accessInfo.Location != "" {
+			accessInfos = append(accessInfos, accessInfo)
+		}
+
+		// 移动到下一个AccessDescription
+		// 需要解析当前AccessDescription的长度
+		_, descTotalLen := p.parseAccessDescriptionLength(pos)
+		if descTotalLen <= 0 {
+			// 如果当前AccessDescription解析失败，尝试手动查找下一个
+			for i := pos + 1; i < len(p.data) && i < endPos; i++ {
+				if p.data[i] == 0x30 { // 找到下一个SEQUENCE标记
+					pos = i
+					break
+				}
+			}
+			// 如果没找到下一个SEQUENCE标记，跳出循环
+			if pos <= 1+lenBytes+seqLen {
+				break
+			}
+		} else {
+			// 确保不会超出边界
+			if pos+descTotalLen > len(p.data) {
+				break
+			}
+			pos += descTotalLen
+		}
+		iterations++
+	}
+
+	return accessInfos
+}
+
+// parseAccessDescriptionLength 解析单个AccessDescription的总长度
+func (p *AuthorityInfoAccessParser) parseAccessDescriptionLength(startPos int) (contentLen int, totalLen int) {
+	// 边界检查
+	if startPos >= len(p.data) || startPos < 0 {
+		return -1, -1
+	}
+
+	// AccessDescription是一个SEQUENCE
+	if p.data[startPos] != 0x30 {
+		return -1, -1
+	}
+
+	// 解析SEQUENCE长度
+	seqLen, lenBytes := p.parseLength(startPos + 1)
+	if seqLen <= 0 {
+		return -1, -1
+	}
+
+	// 防止整数溢出
+	if seqLen > 10000 || lenBytes > 10 {
+		return -1, -1
+	}
+
+	totalLen = 1 + lenBytes + seqLen
+	return seqLen, totalLen
+}
+
+// parseSingleAccessDescription 解析单个AccessDescription
+func (p *AuthorityInfoAccessParser) parseSingleAccessDescription(startPos int, endPos int) AuthorityAccessInfo {
+	// 确保有足够的数据
+	// 修正边界检查条件，只需要确保有足够的数据来解析基本结构
+	if startPos >= len(p.data) || startPos >= endPos || startPos < 0 || endPos > len(p.data) {
+		return AuthorityAccessInfo{}
+	}
+
+	// AccessDescription是一个SEQUENCE
+	if p.data[startPos] != 0x30 {
+		return AuthorityAccessInfo{}
+	}
+
+	// 解析SEQUENCE长度
+	seqLen, lenBytes := p.parseLength(startPos + 1)
+	if seqLen <= 0 || startPos+1+lenBytes+seqLen > len(p.data) || startPos+1+lenBytes+seqLen > endPos {
+		return AuthorityAccessInfo{}
+	}
+
+	// 解析AccessDescription内容
+	contentStart := startPos + 1 + lenBytes
+	contentEnd := contentStart + seqLen
+
+	if contentStart >= contentEnd || contentEnd > len(p.data) || contentStart < 0 {
+		return AuthorityAccessInfo{}
+	}
+
+	// 解析accessMethod (OID)
+	oidPos := contentStart
+	if oidPos >= len(p.data) || p.data[oidPos] != 0x06 { // OID标记
+		return AuthorityAccessInfo{}
+	}
+
+	oidLen, oidLenBytes := p.parseLength(oidPos + 1)
+	if oidLen <= 0 || oidPos+1+oidLenBytes+oidLen > len(p.data) || oidPos+1+oidLenBytes+oidLen > contentEnd {
+		return AuthorityAccessInfo{}
+	}
+
+	// 确保OID长度合理
+	if oidLen > 100 || oidLen <= 0 {
+		return AuthorityAccessInfo{}
+	}
+
+	// 边界检查
+	if oidPos+1+oidLenBytes+oidLen > len(p.data) {
+		return AuthorityAccessInfo{}
+	}
+
+	oidBytes := p.data[oidPos+1+oidLenBytes : oidPos+1+oidLenBytes+oidLen]
+	oidHex := hex.EncodeToString(oidBytes)
+
+	// 将OID转换为方法名称
+	method := p.oidToMethodName(oidHex)
+
+	// 解析accessLocation (GeneralName)
+	locationPos := oidPos + 1 + oidLenBytes + oidLen
+	if locationPos >= len(p.data) || locationPos >= contentEnd {
+		return AuthorityAccessInfo{}
+	}
+
+	// 查找URI标记 (context-specific tag 6 - 0x86)
+	if p.data[locationPos] == 0x86 {
+		// 解析URI长度
+		uriLen, uriLenBytes := p.parseLength(locationPos + 1)
+		if uriLen > 0 && uriLen < 1000 && locationPos+1+uriLenBytes+uriLen <= len(p.data) && locationPos+1+uriLenBytes+uriLen <= contentEnd {
+			// 提取URI数据
+			uriStart := locationPos + 1 + uriLenBytes
+			uriEnd := locationPos + 1 + uriLenBytes + uriLen
+
+			// 边界检查
+			if uriStart >= len(p.data) || uriEnd > len(p.data) || uriStart >= uriEnd {
+				return AuthorityAccessInfo{}
+			}
+
+			uriBytes := p.data[uriStart:uriEnd]
+			uriStr := string(uriBytes)
+
+			// 验证URI格式
+			if (strings.HasPrefix(uriStr, "http://") || strings.HasPrefix(uriStr, "https://")) &&
+				len(uriStr) > 10 && len(uriStr) < 500 {
+				// 清理URL末尾可能的控制字符
+				cleanURL := p.cleanURL(uriStr)
+				// 即使清理后的URL为空，也返回原始URL
+				if cleanURL == "" {
+					cleanURL = uriStr
+				}
+				return AuthorityAccessInfo{
+					Method:   method,
+					Location: cleanURL,
+				}
+			}
+		}
+	}
+
+	return AuthorityAccessInfo{}
+}
+
+// cleanURL 清理URL末尾可能的无效字符
+func (p *AuthorityInfoAccessParser) cleanURL(url string) string {
+	// 移除URL末尾的控制字符和无效字符
+	for len(url) > 0 {
+		lastChar := url[len(url)-1]
+		// 如果是控制字符或非打印字符，则移除
+		if lastChar < 32 || (lastChar >= 127 && lastChar <= 159) || lastChar == 0x00 {
+			url = url[:len(url)-1]
+		} else {
+			break
+		}
+	}
+
+	// 确保URL以有效的字符结尾
+	for len(url) > 0 {
+		lastChar := url[len(url)-1]
+		if lastChar == '.' || lastChar == '/' {
+			url = url[:len(url)-1]
+		} else {
+			break
+		}
+	}
+
+	// 查找URL中第一个有效的结束位置（http://或https://之后的第一个控制字符或结构标记）
+	if strings.Contains(url, "http://") {
+		httpIdx := strings.Index(url, "http://")
+		if httpIdx >= 0 {
+			// 从http://之后开始查找结束位置
+			startSearch := httpIdx + 7 // "http://".length
+			for i := startSearch; i < len(url); i++ {
+				char := url[i]
+				// 如果遇到控制字符或特殊标记，截断URL
+				if char < 32 || (char >= 127 && char <= 159) || char == 0x00 {
+					url = url[:i]
+					break
+				}
+			}
+		}
+	} else if strings.Contains(url, "https://") {
+		httpsIdx := strings.Index(url, "https://")
+		if httpsIdx >= 0 {
+			// 从https://之后开始查找结束位置
+			startSearch := httpsIdx + 8 // "https://".length
+			for i := startSearch; i < len(url); i++ {
+				char := url[i]
+				// 如果遇到控制字符或特殊标记，截断URL
+				if char < 32 || (char >= 127 && char <= 159) || char == 0x00 {
+					url = url[:i]
+					break
+				}
+			}
+		}
+	}
+
+	return url
+}
+
+// parseLength 解析ASN.1长度字段
+func (p *AuthorityInfoAccessParser) parseLength(startPos int) (length int, lenBytes int) {
+	// 边界检查
+	if startPos >= len(p.data) {
+		return -1, 0
+	}
+
+	firstByte := p.data[startPos]
+	if firstByte&0x80 == 0 { // 短格式
+		return int(firstByte), 1
+	} else { // 长格式
+		lenBytesCount := int(firstByte & 0x7F)
+		// 验证长度字节数是否合理
+		if lenBytesCount > 4 || lenBytesCount <= 0 {
+			return -1, 0
+		}
+
+		// 边界检查
+		if startPos+1+lenBytesCount > len(p.data) {
+			return -1, 0
+		}
+
+		length = 0
+		for i := 0; i < lenBytesCount; i++ {
+			// 防止整数溢出
+			if length > 1000000 {
+				return -1, 0
+			}
+			length = (length << 8) | int(p.data[startPos+1+i])
+		}
+		return length, 1 + lenBytesCount
+	}
+}
+
+// oidToMethodName 将OID转换为方法名称
+func (p *AuthorityInfoAccessParser) oidToMethodName(oidHex string) string {
+	methodNames := map[string]string{
+		"2b06010505073001": "OCSP",
+		"2b06010505073002": "CA Issuers",
+		"2b06010505073003": "Time Stamping",
+		"2b06010505073004": "CA Repository",
+	}
+
+	if name, exists := methodNames[oidHex]; exists {
+		return name
+	}
+
+	return "Unknown (" + oidHex + ")"
+}
+
+// OidToMethodNameForTest 是oidToMethodName的导出版本，用于测试
+func (p *AuthorityInfoAccessParser) OidToMethodNameForTest(oidHex string) string {
+	return p.oidToMethodName(oidHex)
+}
+
+// fallbackParsing 回退解析方法
+func (p *AuthorityInfoAccessParser) fallbackParsing(accessMethods map[string]string) []AuthorityAccessInfo {
+	var accessInfos []AuthorityAccessInfo
+
+	// HTTP和HTTPS URL模式
+	httpPattern := "687474703a2f2f"    // "http://"
+	httpsPattern := "68747470733a2f2f" // "https://"
+
+	// 查找所有OID位置
+	for oid, methodName := range accessMethods {
+		positions := p.findOIDPositions(oid)
+		for _, pos := range positions {
+			url := p.findURLForOID(pos, len(oid), httpPattern, httpsPattern)
+			if url != "" {
+				accessInfo := AuthorityAccessInfo{
+					Method:   methodName,
+					Location: url,
+				}
+				accessInfos = append(accessInfos, accessInfo)
+			}
+		}
+	}
+
+	return accessInfos
+}
+
+// findOIDPositions 查找OID在十六进制数据中的位置
+func (p *AuthorityInfoAccessParser) findOIDPositions(oidHex string) []int {
+	var positions []int
+	start := 0
+	for {
+		idx := strings.Index(p.hexData[start:], oidHex)
+		if idx == -1 {
+			break
+		}
+		actualIdx := start + idx
+		positions = append(positions, actualIdx)
+		start = actualIdx + len(oidHex)
+	}
+	return positions
+}
+
+// findURLForOID 在指定OID附近查找URL
+func (p *AuthorityInfoAccessParser) findURLForOID(oidPosition int, oidLength int, httpPattern, httpsPattern string) string {
+	// 在OID之后查找URL
+	searchStart := oidPosition + oidLength
+	searchEnd := searchStart + 300 // 增加搜索范围到300字符
+
+	if searchEnd > len(p.hexData) {
+		searchEnd = len(p.hexData)
+	}
+
+	// 提取搜索范围内的数据
+	searchData := p.hexData[searchStart:searchEnd]
+
+	// 查找HTTP URL
+	httpIdx := strings.Index(searchData, httpPattern)
+	if httpIdx != -1 {
+		// 计算URL在原始数据中的实际位置
+		actualURLPos := searchStart + httpIdx
+		url := p.extractURLFromHexPrecise(actualURLPos)
+		if url != "" {
+			return url
+		}
+	}
+
+	// 查找HTTPS URL
+	httpsIdx := strings.Index(searchData, httpsPattern)
+	if httpsIdx != -1 {
+		// 计算URL在原始数据中的实际位置
+		actualURLPos := searchStart + httpsIdx
+		url := p.extractURLFromHexPrecise(actualURLPos)
+		if url != "" {
+			return url
+		}
+	}
+
+	return ""
+}
+
+// extractURLFromHexPrecise 精确地从十六进制数据中提取URL
+func (p *AuthorityInfoAccessParser) extractURLFromHexPrecise(startIndex int) string {
+	// 查找URL的结束位置
+	endIndex := len(p.hexData)
+
+	// 查找URL结束的明确标记
+	for i := startIndex + 2; i < endIndex-4; i += 2 {
+		// 检查两个字节的模式
+		if i+4 <= endIndex {
+			fourHex := p.hexData[i : i+4]
+			// 常见的结构开始标记，表示URL可能在这里结束
+			if fourHex == "0000" || // NULL标记
+				fourHex == "0608" || // OID开始标记
+				fourHex == "3081" || // SEQUENCE开始标记
+				fourHex == "3082" || // SEQUENCE开始标记
+				fourHex == "0c08" || // UTF8String开始标记
+				fourHex == "1308" || // PrintableString开始标记
+				fourHex == "863e" || // Context-specific tag 6
+				fourHex == "863f" { // Context-specific tag 6
+				endIndex = i
+				break
+			}
+		}
+
+		// 检查单个字节的模式
+		if i+2 <= endIndex {
+			twoHex := p.hexData[i : i+2]
+			// 单字节结束标记
+			if twoHex == "00" || // NULL标记
+				twoHex == "30" || // SEQUENCE开始标记
+				twoHex == "06" || // OID开始标记
+				twoHex == "86" { // Context-specific tag 6
+				endIndex = i
+				break
+			}
+		}
+	}
+
+	// 确保不会越界
+	if endIndex > len(p.hexData) {
+		endIndex = len(p.hexData)
+	}
+
+	// 提取URL部分的十六进制数据
+	urlHex := p.hexData[startIndex:endIndex]
+
+	// 将十六进制转换为字节，再转换为字符串
+	bytes, err := hex.DecodeString(urlHex)
+	if err != nil {
+		return ""
+	}
+
+	// 检查是否是有效的URL字符
+	urlStr := string(bytes)
+	if strings.HasPrefix(urlStr, "http://") || strings.HasPrefix(urlStr, "https://") {
+		// 验证URL格式，确保包含域名
+		if strings.Contains(urlStr, ".") && len(urlStr) > 10 {
+			// 清理URL，移除可能的尾随字符
+			// 查找URL中可能出现的控制字符或结构标记
+			for i, char := range urlStr {
+				// 如果遇到控制字符或特殊标记，截断URL
+				if char < 32 || (char >= 127 && char <= 159) {
+					urlStr = urlStr[:i]
+					break
+				}
+			}
+			return urlStr
+		}
+	}
+
+	return ""
+}
+
+// deduplicate 对访问信息进行去重
+func (p *AuthorityInfoAccessParser) deduplicate(accessInfos []AuthorityAccessInfo) []AuthorityAccessInfo {
+	seen := make(map[string]bool)
+	var uniqueInfos []AuthorityAccessInfo
+
+	for _, info := range accessInfos {
+		key := info.Method + ":" + info.Location
+		if !seen[key] {
+			seen[key] = true
+			uniqueInfos = append(uniqueInfos, info)
+		}
+	}
+
+	return uniqueInfos
 }
 
 // 将证书详情以表格的形式添加在最后
@@ -612,4 +1243,29 @@ func cleanInputData(input string) string {
 	cleaned = strings.ReplaceAll(cleaned, "\r", "")
 	cleaned = strings.ReplaceAll(cleaned, "\t", "")
 	return strings.TrimSpace(cleaned)
+}
+
+// FallbackParsingForTest 是fallbackParsing的导出版本，用于测试
+func (p *AuthorityInfoAccessParser) FallbackParsingForTest(accessMethods map[string]string) []AuthorityAccessInfo {
+	return p.fallbackParsing(accessMethods)
+}
+
+// ParseWithASN1ForTest 是parseWithASN1的导出版本，用于测试
+func (p *AuthorityInfoAccessParser) ParseWithASN1ForTest() []AuthorityAccessInfo {
+	return p.parseWithASN1()
+}
+
+// ParseLengthForTest 是parseLength的导出版本，用于测试
+func (p *AuthorityInfoAccessParser) ParseLengthForTest(startPos int) (length int, lenBytes int) {
+	return p.parseLength(startPos)
+}
+
+// ParseSingleAccessDescriptionForTest 是parseSingleAccessDescription的导出版本，用于测试
+func (p *AuthorityInfoAccessParser) ParseSingleAccessDescriptionForTest(startPos int, endPos int) AuthorityAccessInfo {
+	return p.parseSingleAccessDescription(startPos, endPos)
+}
+
+// ParseAccessDescriptionLengthForTest 是parseAccessDescriptionLength的导出版本，用于测试
+func (p *AuthorityInfoAccessParser) ParseAccessDescriptionLengthForTest(startPos int) (contentLen int, totalLen int) {
+	return p.parseAccessDescriptionLength(startPos)
 }
