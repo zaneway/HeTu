@@ -3,8 +3,10 @@ package util
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"os"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 func Base64EncodeToString(data []byte) string {
@@ -34,4 +36,22 @@ func HexDecodeStringToBytes(data string) ([]byte, error) {
 func HexDecodeStringToInt(data string) (int, error) {
 	i, err := strconv.ParseInt(data, 16, 64)
 	return int(i), err
+}
+
+// IsASCIIOrChinese 判断内容是否为ASCII字符或汉字
+func IsASCIIOrChinese(content []byte) bool {
+	s := string(content)
+	for _, r := range s {
+		// ASCII字符范围是0-127
+		if r <= 127 || unicode.Is(unicode.Han, r) {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+// ReadFileContent 读取文件内容
+func ReadFileContent(filePath string) ([]byte, error) {
+	return os.ReadFile(filePath)
 }

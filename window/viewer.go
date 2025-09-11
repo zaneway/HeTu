@@ -23,19 +23,42 @@ func NewWindow() {
 	// 设置窗口图标（可选）
 	// myWindow.SetIcon(resourceIconPng)
 
-	body := newBody()
+	// 创建共享输入框，用于接收拖拽文件内容
+	sharedInput := createSharedInput()
+
+	// 设置文件拖拽处理函数
+	myWindow.SetOnDropped(func(pos fyne.Position, uris []fyne.URI) {
+		if len(uris) > 0 {
+			filePath := uris[0].Path()
+			// 读取文件内容
+			content, err := util.ReadFileContent(filePath)
+			if err != nil {
+				sharedInput.SetText("文件读取错误: " + err.Error())
+				return
+			}
+
+			// 判断内容是否为ASCII或汉字
+			if util.IsASCIIOrChinese(content) {
+				// 如果是ASCII或汉字，直接显示
+				sharedInput.SetText(string(content))
+			} else {
+				// 否则进行base64编码
+				encodedContent := util.Base64EncodeToString(content)
+				sharedInput.SetText(encodedContent)
+			}
+		}
+	})
+
+	body := newBody(sharedInput)
 	myWindow.SetContent(body)
 	myWindow.Resize(fyne.Size{1000, 700}) // 增大窗口尺寸
 	myWindow.CenterOnScreen()             // 窗口居中显示
 	myWindow.ShowAndRun()
 }
 
-func newBody() *fyne.Container {
+func newBody(sharedInput *widget.Entry) *fyne.Container {
 	// 创建美化的表头区域
 	headerContainer := createHeader()
-
-	// 创建全局共享的输入框
-	sharedInput := createSharedInput()
 
 	// 创建主要内容区域（传入共享输入框）
 	mainContent := createMainContent(sharedInput)
@@ -100,10 +123,11 @@ func createHeader() *fyne.Container {
 // 创建全局共享的输入框
 func createSharedInput() *widget.Entry {
 	input := widget.NewMultiLineEntry()
-	input.SetPlaceHolder("📝 请输入 Base64/Hex 格式的数据进行解析...")
+	input.SetPlaceHolder("📝 请输入 Base64/Hex 格式的数据进行解析，或拖拽文件到此处...")
 	input.Wrapping = fyne.TextWrapWord
 	// 设置固定尺寸，防止移位
 	input.Resize(fyne.NewSize(0, 140)) // 宽度自适应，高度固定
+
 	return input
 }
 
@@ -121,13 +145,13 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 
 	// 定义各标签页的占位符文本
 	placeholders := map[string]string{
-		"🔄 编码转换":    "📝 请输入 Base64/Hex 格式的数据进行编码转换...",
-		"🏆 证书解析":    "📝 请输入 Base64/Hex 格式的证书数据进行解析...",
-		"🌳 ASN.1结构": "📝 请输入 Base64/Hex 格式的 ASN.1 数据进行解析...",
-		"🗝️ 密钥工具":   "📝 密钥生成工具 - 请在下方选择算法并生成密钥...",
-		"📦 信封解析":    "📝 请输入 Base64/Hex 格式的信封数据 (GMT-0009)...",
-		"🎫 P12证书":   "📝 请输入 Base64/Hex 格式的证书数据生成 PFX 文件...",
-		"📜 CRL列表":   "📝 请输入 Base64/Hex 格式的 CRL 数据，或点击'选择CRL文件'按钮...",
+		"🔄 编码转换":    "📝 请输入 Base64/Hex 格式的数据进行编码转换，或拖拽文件到此处...",
+		"🏆 证书解析":    "📝 请输入 Base64/Hex 格式的证书数据进行解析，或拖拽证书文件到此处...",
+		"🌳 ASN.1结构": "📝 请输入 Base64/Hex 格式的 ASN.1 数据进行解析，或拖拽文件到此处...",
+		"🗝️ 密钥工具":   "📝 密钥生成工具 - 请在下方选择算法并生成密钥，或拖拽密钥文件到此处...",
+		"📦 信封解析":    "📝 请输入 Base64/Hex 格式的信封数据 (GMT-0009)，或拖拽文件到此处...",
+		"🎫 P12证书":   "📝 请输入 Base64/Hex 格式的证书数据生成 PFX 文件，或拖拽证书文件到此处...",
+		"📜 CRL列表":   "📝 请输入 Base64/Hex 格式的 CRL 数据，或拖拽CRL文件到此处...",
 	}
 
 	// 创建美化的标签页
