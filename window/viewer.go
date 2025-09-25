@@ -145,13 +145,14 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 
 	// 定义各标签页的占位符文本
 	placeholders := map[string]string{
-		"🔄 编码转换":    "📝 请输入 Base64/Hex 格式的数据进行编码转换，或拖拽文件到此处...",
-		"🏆 证书解析":    "📝 请输入 Base64/Hex 格式的证书数据进行解析，或拖拽证书文件到此处...",
-		"🌳 ASN.1结构": "📝 请输入 Base64/Hex 格式的 ASN.1 数据进行解析，或拖拽文件到此处...",
-		"🗝️ 密钥工具":   "📝 密钥生成工具 - 请在下方选择算法并生成密钥，或拖拽密钥文件到此处...",
-		"📦 信封解析":    "📝 请输入 Base64/Hex 格式的信封数据 (GMT-0009)，或拖拽文件到此处...",
-		"🎫 P12证书":   "📝 请输入 Base64/Hex 格式的证书数据生成 PFX 文件，或拖拽证书文件到此处...",
-		"📜 CRL列表":   "📝 请输入 Base64/Hex 格式的 CRL 数据，或拖拽CRL文件到此处...",
+		"🔄 编码转换":     "📝 请输入 Base64/Hex 格式的数据进行编码转换，或拖拽文件到此处...",
+		"🏆 证书解析":     "📝 请输入 Base64/Hex 格式的证书数据进行解析，或拖拽证书文件到此处...",
+		"🌳 ASN.1结构":  "📝 请输入 Base64/Hex 格式的 ASN.1 数据进行解析，或拖拽文件到此处...",
+		"🗝️ 密钥工具":    "📝 密钥生成工具 - 请在下方选择算法并生成密钥，或拖拽密钥文件到此处...",
+		"📦 信封解析":     "📝 请输入 Base64/Hex 格式的信封数据 (GMT-0009)，或拖拽文件到此处...",
+		"🎫 P12证书":    "📝 请输入 Base64/Hex 格式的证书数据生成 PFX 文件，或拖拽证书文件到此处...",
+		"📜 CRL列表":    "📝 请输入 Base64/Hex 格式的 CRL 数据，或拖拽CRL文件到此处...",
+		"📄 JSON/XML": "📝 请输入 JSON 或 XML 数据进行格式化，或拖拽文件到此处...",
 	}
 
 	// 创建美化的标签页
@@ -163,6 +164,7 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 		container.NewTabItemWithIcon("📦 信封解析", theme.FolderIcon(), SM2EnvelopedPfxStructure(sharedInput)),
 		container.NewTabItemWithIcon("🎫 P12证书", theme.AccountIcon(), SM2PfxStructure(sharedInput)),
 		container.NewTabItemWithIcon("📜 CRL列表", theme.AccountIcon(), CrlStructure(sharedInput)),
+		container.NewTabItemWithIcon("📄 JSON/XML", theme.DocumentIcon(), FormatStructure(sharedInput)),
 	)
 
 	// 设置标签页样式
