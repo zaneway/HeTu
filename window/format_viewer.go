@@ -20,8 +20,8 @@ func FormatStructure(input *widget.Entry) *fyne.Container {
 
 	// 确认按钮
 	confirm := widget.NewButtonWithIcon("格式化", theme.ConfirmIcon(), func() {
-		inputData := strings.TrimSpace(input.Text)
-		if inputData == "" {
+		inputData := input.Text // 不使用TrimSpace，保持原始数据
+		if strings.TrimSpace(inputData) == "" {
 			dialog.ShowError(fmt.Errorf("请输入JSON或XML数据"), fyne.CurrentApp().Driver().AllWindows()[0])
 			return
 		}
