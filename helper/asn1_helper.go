@@ -138,11 +138,13 @@ func parseAsn1WithDepth(data []byte, currentDepth, maxDepth int) ASN1Node {
 			}
 
 			thisNodeValue = thisNodeValue[childNode.Length:]
+
 		}
 
 		if childCount >= maxChildren {
 			thisNode.Error = fmt.Sprintf("子节点过多，已截断（显示前%d个）", maxChildren)
 		}
+
 	} else {
 		thisNode.Content = node.Bytes
 	}
@@ -210,7 +212,7 @@ func buildAsn1ValueSafe(node ASN1Node) (data string) {
 			}
 		}
 	case 6: // OBJECT IDENTIFIER
-		if oid, err := parseObjectIdentifierSafe(node.FullBytes); err == nil {
+		if oid, err := ParseObjectIdentifierSafe(node.FullBytes); err == nil {
 			data = oid
 		}
 	case 12: // UTF8String
@@ -283,8 +285,8 @@ func sm2SignDataSafe(data []byte) (string, string, error) {
 	return r.String(), s.String(), nil
 }
 
-// parseObjectIdentifierSafe 安全的OID解析
-func parseObjectIdentifierSafe(fullBytes []byte) (string, error) {
+// ParseObjectIdentifierSafe 安全的OID解析（导出版本）
+func ParseObjectIdentifierSafe(fullBytes []byte) (string, error) {
 	if len(fullBytes) > 1024 {
 		return "", fmt.Errorf("数据过大")
 	}
@@ -322,6 +324,11 @@ func parseObjectIdentifierSafe(fullBytes []byte) (string, error) {
 	}
 
 	return oidStr, nil
+}
+
+// parseObjectIdentifierSafe 安全的OID解析
+func parseObjectIdentifierSafe(fullBytes []byte) (string, error) {
+	return ParseObjectIdentifierSafe(fullBytes)
 }
 
 // parseUTCTimeSafe 安全的UTC时间解析

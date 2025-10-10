@@ -30,6 +30,7 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 	// 标签名称，添加更多信息和状态图标
 	var value string
 	var statusIcon string
+	var displayValue string // 用于存储OID的显示值
 	if node.Error != "" {
 		statusIcon = "❌"
 		value = fmt.Sprintf("%s %s (Tag:0x%s) - %s", statusIcon, name, util.HexEncodeIntToString(node.Tag), node.Error)
@@ -40,12 +41,62 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 			statusIcon = "📄" // 简单类型
 		}
 
-		// 根节点使用更突出的显示
-		if level == 0 {
-			value = fmt.Sprintf("🌟 根节点: %s %s (Tag:0x%s) [%d bytes] - 深度:%d", statusIcon, name, util.HexEncodeIntToString(node.Tag), node.Length, node.Depth)
+		// 特殊处理OID节点，显示具体的OID值
+		if node.Tag == 6 { // OBJECT IDENTIFIER
+			if oid, err := ParseObjectIdentifierSafe(node.FullBytes); err == nil {
+				displayValue = oid
+			} else {
+				displayValue = hex.EncodeToString(node.Content)
+			}
+			value = fmt.Sprintf("%s %s: %s (Tag:0x%s) [%d bytes]", statusIcon, name, displayValue, util.HexEncodeIntToString(node.Tag), node.Length)
 		} else {
-			value = fmt.Sprintf("%s %s (Tag:0x%s) [%d bytes]", statusIcon, name, util.HexEncodeIntToString(node.Tag), node.Length)
+			// 根节点使用更突出的显示
+			if level == 0 {
+				value = fmt.Sprintf("🌟 根节点: %s %s (Tag:0x%s) [%d bytes] - 深度:%d", statusIcon, name, util.HexEncodeIntToString(node.Tag), node.Length, node.Depth)
+			} else {
+				value = fmt.Sprintf("%s %s (Tag:0x%s) [%d bytes]", statusIcon, name, util.HexEncodeIntToString(node.Tag), node.Length)
+			}
 		}
+	}
+
+	// 如果是OID节点，直接返回值，不再递归解析子节点
+	if node.Tag == 6 { // OBJECT IDENTIFIER
+		// OID节点没有子节点需要解析，直接返回包含内容的AccordionItem
+		contentText := displayValue
+		if len(contentText) > 1500 { // 增加显示长度
+			contentText = contentText[:1500] + fmt.Sprintf("\n\n... 已截断 (总长度: %d 字符)", len(displayValue))
+		}
+
+		// 创建可复制的内容显示
+		contentEntry := widget.NewMultiLineEntry()
+		contentEntry.SetText(contentText)
+		contentEntry.Wrapping = fyne.TextWrapWord
+
+		// 根据层级调整显示大小
+		if level == 0 {
+			// 根节点使用更大的显示区域
+			contentEntry.Resize(fyne.NewSize(600, 200))
+		} else {
+			// 子节点使用标准大小
+			contentEntry.Resize(fyne.NewSize(500, 120))
+		}
+
+		// 添加复制按钮
+		copyBtn := widget.NewButtonWithIcon("📋 复制内容", theme.ContentCopyIcon(), func() {
+			// 使用系统剪贴板复制内容
+			clipboard := fyne.CurrentApp().Driver().AllWindows()[0].Clipboard()
+			clipboard.SetContent(contentEntry.Text)
+		})
+
+		// OID节点只有复制按钮
+		buttonContainer := container.NewHBox(copyBtn, layout.NewSpacer())
+
+		content := container.NewVBox(
+			contentEntry,
+			buttonContainer,
+		)
+
+		return widget.NewAccordionItem(value, content)
 	}
 
 	// 如果有子节点，递归生成子节点的Accordion
