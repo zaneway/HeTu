@@ -35,10 +35,34 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 		statusIcon = "❌"
 		value = fmt.Sprintf("%s %s (Tag:0x%s) - %s", statusIcon, name, util.HexEncodeIntToString(node.Tag), node.Error)
 	} else {
-		if len(node.Children) > 0 {
-			statusIcon = "📁" // 复合类型
-		} else {
-			statusIcon = "📄" // 简单类型
+		// 根据不同的节点类型使用不同的图标
+		switch node.Tag {
+		case 6: // OBJECT IDENTIFIER
+			statusIcon = "🆔" // OID图标
+		case 16, 48: // SEQUENCE, SEQUENCE OF
+			statusIcon = "📂" // 序列图标
+		case 17, 49: // SET, SET OF
+			statusIcon = "📦" // 集合图标
+		case 2: // INTEGER
+			statusIcon = "🔢" // 整数图标
+		case 3: // BIT STRING
+			statusIcon = " BitSet " // 位串图标
+		case 4: // OCTET STRING
+			statusIcon = "🔤" // 八位组串图标
+		case 5: // NULL
+			statusIcon = " Nil " // 空值图标
+		case 12, 19, 20, 22: // 字符串类型
+			statusIcon = "📝" // 文本图标
+		case 23, 24: // 时间类型
+			statusIcon = "🕒" // 时间图标
+		case 1, 9: // BOOLEAN, REAL
+			statusIcon = "🔘" // 布尔值图标
+		default:
+			if len(node.Children) > 0 {
+				statusIcon = "📁" // 复合类型
+			} else {
+				statusIcon = "📄" // 简单类型
+			}
 		}
 
 		// 特殊处理OID节点，显示具体的OID值
@@ -54,7 +78,9 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 			if level == 0 {
 				value = fmt.Sprintf("🌟 根节点: %s %s (Tag:0x%s) [%d bytes] - 深度:%d", statusIcon, name, util.HexEncodeIntToString(node.Tag), node.Length, node.Depth)
 			} else {
-				value = fmt.Sprintf("%s %s (Tag:0x%s) [%d bytes]", statusIcon, name, util.HexEncodeIntToString(node.Tag), node.Length)
+				// 添加缩进以增强层次感
+				indent := strings.Repeat("  ", level) // 每层两个空格缩进
+				value = fmt.Sprintf("%s%s %s (Tag:0x%s) [%d bytes]", indent, statusIcon, name, util.HexEncodeIntToString(node.Tag), node.Length)
 			}
 		}
 	}
@@ -123,12 +149,14 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 		}
 
 		childAccordion := widget.NewAccordion(childrenAccordionItems...)
+		// 为子Accordion添加一些内边距以增强层次感
+		childAccordionContainer := container.NewPadded(childAccordion)
 
 		// 根节点的子节点容器特殊处理
 		if level == 0 {
 			// 根节点简化显示
 			content := container.NewVBox(
-				container.NewPadded(childAccordion),
+				childAccordionContainer,
 			)
 
 			return widget.NewAccordionItem(value, content)
@@ -139,7 +167,7 @@ func buildAccordion(node ASN1Node, level int) *widget.AccordionItem {
 
 			content := container.NewVBox(
 				//statsLabel,
-				container.NewPadded(childAccordion),
+				childAccordionContainer,
 			)
 
 			return widget.NewAccordionItem(value, content)
