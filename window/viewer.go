@@ -372,10 +372,16 @@ func (hm *HistoryManager) LoadHistoryForTab(tabName string) {
 	// 添加历史记录到下拉框
 	for _, record := range records {
 		// 截取内容的前50个字符作为显示文本
-		displayText := record.Content
-		if len(displayText) > 50 {
-			displayText = displayText[:50] + "..."
+		contentText := record.Content
+		if len(contentText) > 50 {
+			contentText = contentText[:50] + "..."
 		}
+
+		// 格式化时间（只显示月-日 时:分）
+		timeText := record.CreatedAt.Format("01-02 15:04")
+
+		// 构造显示文本（时间 + 内容）
+		displayText := fmt.Sprintf("[%s] %s", timeText, contentText)
 
 		// 处理重复显示文本的情况
 		originalDisplayText := displayText
@@ -395,7 +401,7 @@ func (hm *HistoryManager) LoadHistoryForTab(tabName string) {
 			}
 		}
 
-		// 保存显示文本到完整内容的映射
+		// 保存显示文本到完整内容的映射（只保存内容，不保存时间）
 		hm.displayTextMap[tabName][displayText] = record.Content
 		hm.selectWidget.Options = append(hm.selectWidget.Options, displayText)
 	}
