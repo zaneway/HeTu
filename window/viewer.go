@@ -294,7 +294,7 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 // 创建底部状态栏
 func createFooter() *fyne.Container {
 	// 版本信息
-	versionLabel := widget.NewLabel("v1.0.5")
+	versionLabel := widget.NewLabel("v1.0.6")
 	versionLabel.TextStyle = fyne.TextStyle{Italic: true}
 
 	// 状态信息
