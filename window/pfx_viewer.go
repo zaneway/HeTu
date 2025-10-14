@@ -41,6 +41,11 @@ func SM2PfxStructure(input *widget.Entry) *fyne.Container {
 		// 保存到历史记录
 		if inputCert != "" {
 			util.GetHistoryDB().AddHistory("🎫 P12证书", inputCert)
+
+			// 刷新历史记录下拉框
+			if historyManager := GetGlobalHistoryManager(); historyManager != nil {
+				historyManager.LoadHistoryForTab("🎫 P12证书")
+			}
 		}
 
 		decodeCert, err := base64.StdEncoding.DecodeString(inputCert)

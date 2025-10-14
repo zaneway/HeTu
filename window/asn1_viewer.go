@@ -284,6 +284,11 @@ func Asn1Structure(input *widget.Entry) *fyne.Container {
 		// 保存到历史记录
 		if inputData != "" {
 			util.GetHistoryDB().AddHistory("🌳 ASN.1结构", inputData)
+
+			// 刷新历史记录下拉框
+			if historyManager := GetGlobalHistoryManager(); historyManager != nil {
+				historyManager.LoadHistoryForTab("🌳 ASN.1结构")
+			}
 		}
 
 		// 更新状态

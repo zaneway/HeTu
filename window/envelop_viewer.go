@@ -39,6 +39,11 @@ func SM2EnvelopedPfxStructure(input *widget.Entry) *fyne.Container {
 		// 保存到历史记录
 		if inputEnveloped != "" {
 			util.GetHistoryDB().AddHistory("📦 信封解析", inputEnveloped)
+
+			// 刷新历史记录下拉框
+			if historyManager := GetGlobalHistoryManager(); historyManager != nil {
+				historyManager.LoadHistoryForTab("📦 信封解析")
+			}
 		}
 
 		decodeEnveloped, err := base64.StdEncoding.DecodeString(inputEnveloped)

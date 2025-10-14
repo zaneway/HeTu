@@ -37,6 +37,11 @@ func CertificateStructure(input *widget.Entry) *fyne.Container {
 		// 保存到历史记录
 		if inputCert != "" {
 			util.GetHistoryDB().AddHistory("🏆 证书解析", inputCert)
+
+			// 刷新历史记录下拉框
+			if historyManager := GetGlobalHistoryManager(); historyManager != nil {
+				historyManager.LoadHistoryForTab("🏆 证书解析")
+			}
 		}
 
 		detail.RemoveAll()

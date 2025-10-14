@@ -32,6 +32,11 @@ func CoderStructure(input *widget.Entry) *fyne.Container {
 		// 保存到历史记录
 		if inputData != "" {
 			util.GetHistoryDB().AddHistory("🔄 编码转换", inputData)
+
+			// 刷新历史记录下拉框
+			if historyManager := GetGlobalHistoryManager(); historyManager != nil {
+				historyManager.LoadHistoryForTab("🔄 编码转换")
+			}
 		}
 
 		output.Text = ""

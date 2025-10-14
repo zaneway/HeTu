@@ -4,6 +4,7 @@ import (
 	"HeTu/util"
 	"fmt"
 	"net/url"
+	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -26,6 +27,26 @@ const (
 	CrlTab         = "📜 CRL列表"
 	FormatTab      = "📄 JSON/XML"
 )
+
+// 全局历史记录管理器引用
+var (
+	globalHistoryManager *HistoryManager
+	historyManagerMutex  sync.RWMutex
+)
+
+// GetGlobalHistoryManager 获取全局历史记录管理器
+func GetGlobalHistoryManager() *HistoryManager {
+	historyManagerMutex.RLock()
+	defer historyManagerMutex.RUnlock()
+	return globalHistoryManager
+}
+
+// SetGlobalHistoryManager 设置全局历史记录管理器
+func SetGlobalHistoryManager(manager *HistoryManager) {
+	historyManagerMutex.Lock()
+	defer historyManagerMutex.Unlock()
+	globalHistoryManager = manager
+}
 
 func NewWindow() {
 	myApp := app.New()
@@ -177,6 +198,9 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 
 	// 创建历史记录管理器
 	historyManager := NewHistoryManager(historySelect, sharedInput)
+
+	// 设置全局历史记录管理器引用
+	SetGlobalHistoryManager(historyManager)
 
 	// 创建清除历史记录按钮
 	clearHistoryBtn := widget.NewButtonWithIcon("🗑️", theme.DeleteIcon(), func() {
