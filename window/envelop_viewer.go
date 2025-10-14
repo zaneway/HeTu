@@ -2,6 +2,7 @@ package window
 
 import (
 	"HeTu/gm"
+	"HeTu/util"
 	"encoding/asn1"
 	"encoding/base64"
 	"encoding/hex"
@@ -34,6 +35,12 @@ func SM2EnvelopedPfxStructure(input *widget.Entry) *fyne.Container {
 	confirm := buildButton("确认", theme.ConfirmIcon(), func() {
 		inputEnveloped := input.Text
 		inputKey := KeyInput.Text
+
+		// 保存到历史记录
+		if inputEnveloped != "" {
+			util.GetHistoryDB().AddHistory("📦 信封解析", inputEnveloped)
+		}
+
 		decodeEnveloped, err := base64.StdEncoding.DecodeString(inputEnveloped)
 		if err != nil {
 			decodeEnveloped, err = hex.DecodeString(inputEnveloped)

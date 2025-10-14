@@ -26,6 +26,11 @@ func FormatStructure(input *widget.Entry) *fyne.Container {
 			return
 		}
 
+		// 保存到历史记录
+		if inputData != "" {
+			util.GetHistoryDB().AddHistory("📄 JSON/XML", inputData)
+		}
+
 		detail.RemoveAll()
 
 		// 检查数据类型并格式化

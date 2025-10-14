@@ -281,6 +281,11 @@ func Asn1Structure(input *widget.Entry) *fyne.Container {
 			return
 		}
 
+		// 保存到历史记录
+		if inputData != "" {
+			util.GetHistoryDB().AddHistory("🌳 ASN.1结构", inputData)
+		}
+
 		// 更新状态
 		statusLabel.SetText("正在预处理数据...")
 		progressBar.Show()

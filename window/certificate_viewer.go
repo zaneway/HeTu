@@ -2,6 +2,7 @@ package window
 
 import (
 	"HeTu/helper"
+	"HeTu/util"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
@@ -31,6 +32,11 @@ func CertificateStructure(input *widget.Entry) *fyne.Container {
 		if inputCert == "" {
 			dialog.ShowError(fmt.Errorf("请输入证书数据"), fyne.CurrentApp().Driver().AllWindows()[0])
 			return
+		}
+
+		// 保存到历史记录
+		if inputCert != "" {
+			util.GetHistoryDB().AddHistory("🏆 证书解析", inputCert)
 		}
 
 		detail.RemoveAll()

@@ -1,6 +1,7 @@
 package window
 
 import (
+	"HeTu/util"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -27,6 +28,12 @@ func CoderStructure(input *widget.Entry) *fyne.Container {
 	// 解析按钮
 	confirmButton := widget.NewButtonWithIcon("确认", theme.ConfirmIcon(), func() {
 		inputData := strings.TrimSpace(input.Text)
+
+		// 保存到历史记录
+		if inputData != "" {
+			util.GetHistoryDB().AddHistory("🔄 编码转换", inputData)
+		}
+
 		output.Text = ""
 		decodedData, err := hex.DecodeString(inputData)
 		if err == nil {

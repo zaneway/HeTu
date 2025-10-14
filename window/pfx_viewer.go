@@ -2,6 +2,7 @@ package window
 
 import (
 	"HeTu/helper"
+	"HeTu/util"
 	"encoding/base64"
 	"encoding/hex"
 
@@ -36,6 +37,12 @@ func SM2PfxStructure(input *widget.Entry) *fyne.Container {
 		inputCert := input.Text
 		inputKey := KeyInput.Text
 		inputPassword := passwordInput.Text
+
+		// 保存到历史记录
+		if inputCert != "" {
+			util.GetHistoryDB().AddHistory("🎫 P12证书", inputCert)
+		}
+
 		decodeCert, err := base64.StdEncoding.DecodeString(inputCert)
 		if err != nil {
 			decodeCert, err = hex.DecodeString(inputCert)

@@ -2,15 +2,29 @@ package window
 
 import (
 	"HeTu/util"
+	"fmt"
 	"net/url"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/lengzhao/font/autoload" //这个可以让你识别中文
+)
+
+// 定义标签页名称常量
+const (
+	CoderTab       = "🔄 编码转换"
+	CertificateTab = "🏆 证书解析"
+	Asn1Tab        = "🌳 ASN.1结构"
+	KeyTab         = "🗝️ 密钥工具"
+	EnvelopTab     = "📦 信封解析"
+	P12Tab         = "🎫 P12证书"
+	CrlTab         = "📜 CRL列表"
+	FormatTab      = "📄 JSON/XML"
 )
 
 func NewWindow() {
@@ -145,41 +159,101 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 
 	// 定义各标签页的占位符文本
 	placeholders := map[string]string{
-		"🔄 编码转换":     "📝 请输入 Base64/Hex 格式的数据进行编码转换，或拖拽文件到此处...",
-		"🏆 证书解析":     "📝 请输入 Base64/Hex 格式的证书数据进行解析，或拖拽证书文件到此处...",
-		"🌳 ASN.1结构":  "📝 请输入 Base64/Hex 格式的 ASN.1 数据进行解析，或拖拽文件到此处...",
-		"🗝️ 密钥工具":    "📝 密钥生成工具 - 请在下方选择算法并生成密钥，或拖拽密钥文件到此处...",
-		"📦 信封解析":     "📝 请输入 Base64/Hex 格式的信封数据 (GMT-0009)，或拖拽文件到此处...",
-		"🎫 P12证书":    "📝 请输入 Base64/Hex 格式的证书数据生成 PFX 文件，或拖拽证书文件到此处...",
-		"📜 CRL列表":    "📝 请输入 Base64/Hex 格式的 CRL 数据，或拖拽CRL文件到此处...",
-		"📄 JSON/XML": "📝 请输入 JSON 或 XML 数据进行格式化，或拖拽文件到此处...",
+		CoderTab:       "📝 请输入 Base64/Hex 格式的数据进行编码转换，或拖拽文件到此处...",
+		CertificateTab: "📝 请输入 Base64/Hex 格式的证书数据进行解析，或拖拽证书文件到此处...",
+		Asn1Tab:        "📝 请输入 Base64/Hex 格式的 ASN.1 数据进行解析，或拖拽文件到此处...",
+		KeyTab:         "📝 密钥生成工具 - 请在下方选择算法并生成密钥，或拖拽密钥文件到此处...",
+		EnvelopTab:     "📝 请输入 Base64/Hex 格式的信封数据 (GMT-0009)，或拖拽文件到此处...",
+		P12Tab:         "📝 请输入 Base64/Hex 格式的证书数据生成 PFX 文件，或拖拽证书文件到此处...",
+		CrlTab:         "📝 请输入 Base64/Hex 格式的 CRL 数据，或拖拽CRL文件到此处...",
+		FormatTab:      "📝 请输入 JSON 或 XML 数据进行格式化，或拖拽文件到此处...",
 	}
+
+	// 创建历史记录下拉框
+	historySelect := widget.NewSelect([]string{}, func(selected string) {
+		// 历史记录选择功能将在HistoryManager中实现
+	})
+	historySelect.PlaceHolder = "📖 历史记录"
+
+	// 创建历史记录管理器
+	historyManager := NewHistoryManager(historySelect, sharedInput)
+
+	// 创建清除历史记录按钮
+	clearHistoryBtn := widget.NewButtonWithIcon("🗑️", theme.DeleteIcon(), func() {
+		// 清除当前标签页的历史记录
+		dialog.ShowConfirm("确认清除", "确定要清除当前标签页的所有历史记录吗？",
+			func(confirmed bool) {
+				if confirmed {
+					err := historyManager.ClearHistory()
+					if err != nil {
+						dialog.ShowError(fmt.Errorf("清除历史记录失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
+						return
+					}
+					//dialog.ShowInformation("成功", "历史记录已清除", fyne.CurrentApp().Driver().AllWindows()[0])
+				}
+			}, fyne.CurrentApp().Driver().AllWindows()[0])
+	})
+
+	// 设置历史记录下拉框的回调函数
+	historySelect.OnChanged = func(selected string) {
+		historyManager.SelectHistory(selected)
+	}
+
+	// 创建历史记录容器
+	historyContainer := container.NewBorder(
+		nil,
+		nil,
+		clearHistoryBtn,
+		nil,
+		historySelect,
+	)
+
+	// 将历史记录容器添加到输入框容器中
+	inputContainer.Add(historyContainer)
+	inputContainer.Add(widget.NewSeparator())
 
 	// 创建美化的标签页
 	tabs := container.NewAppTabs(
-		container.NewTabItemWithIcon("🔄 编码转换", theme.ZoomInIcon(), CoderStructure(sharedInput)),
-		container.NewTabItemWithIcon("🏆 证书解析", theme.InfoIcon(), CertificateStructure(sharedInput)),
-		container.NewTabItemWithIcon("🌳 ASN.1结构", theme.ZoomInIcon(), Asn1Structure(sharedInput)),
-		container.NewTabItemWithIcon("🗝️ 密钥工具", theme.ColorChromaticIcon(), KeyStructure(sharedInput)),
-		container.NewTabItemWithIcon("📦 信封解析", theme.FolderIcon(), SM2EnvelopedPfxStructure(sharedInput)),
-		container.NewTabItemWithIcon("🎫 P12证书", theme.AccountIcon(), SM2PfxStructure(sharedInput)),
-		container.NewTabItemWithIcon("📜 CRL列表", theme.AccountIcon(), CrlStructure(sharedInput)),
-		container.NewTabItemWithIcon("📄 JSON/XML", theme.DocumentIcon(), FormatStructure(sharedInput)),
+		container.NewTabItemWithIcon(CoderTab, theme.ZoomInIcon(), CoderStructure(sharedInput)),
+		container.NewTabItemWithIcon(CertificateTab, theme.InfoIcon(), CertificateStructure(sharedInput)),
+		container.NewTabItemWithIcon(Asn1Tab, theme.ZoomInIcon(), Asn1Structure(sharedInput)),
+		container.NewTabItemWithIcon(KeyTab, theme.ColorChromaticIcon(), KeyStructure(sharedInput)),
+		container.NewTabItemWithIcon(EnvelopTab, theme.FolderIcon(), SM2EnvelopedPfxStructure(sharedInput)),
+		container.NewTabItemWithIcon(P12Tab, theme.AccountIcon(), SM2PfxStructure(sharedInput)),
+		container.NewTabItemWithIcon(CrlTab, theme.AccountIcon(), CrlStructure(sharedInput)),
+		container.NewTabItemWithIcon(FormatTab, theme.DocumentIcon(), FormatStructure(sharedInput)),
 	)
 
 	// 设置标签页样式
 	tabs.SetTabLocation(container.TabLocationTop)
 
-	// 设置标签页切换时的占位符更新
+	// 设置标签页切换时的占位符更新和历史记录加载
 	tabs.OnSelected = func(tab *container.TabItem) {
 		if placeholder, exists := placeholders[tab.Text]; exists {
 			sharedInput.SetPlaceHolder(placeholder)
 			sharedInput.Refresh()
 		}
+
+		// 更新当前标签页
+		historyManager.SetCurrentTab(tab.Text)
+
+		// 加载该标签页的历史记录
+		historyManager.LoadHistoryForTab(tab.Text)
 	}
 
 	// 设置默认占位符（编码转换）
-	sharedInput.SetPlaceHolder(placeholders["🔄 编码转换"])
+	sharedInput.SetPlaceHolder(placeholders[CoderTab])
+
+	// 移除输入框内容变化时的自动保存逻辑
+	// 当输入框内容发生变化时，不再自动保存到历史记录
+	originalOnChanged := sharedInput.OnChanged
+	sharedInput.OnChanged = func(s string) {
+		// 调用原来的OnChanged处理函数（如果存在）
+		if originalOnChanged != nil {
+			originalOnChanged(s)
+		}
+		// 不再自动保存历史记录
+	}
 
 	// 主要内容区域 - 使用Border布局分离输入框和标签页
 	mainContent := container.NewBorder(
@@ -225,4 +299,115 @@ func refreshTimeSeconds() *widget.Label {
 		}
 	}()
 	return nowTime
+}
+
+// HistoryManager 历史记录管理器
+type HistoryManager struct {
+	currentTab   string
+	historyMap   map[string][]util.HistoryRecord
+	selectWidget *widget.Select
+	inputWidget  *widget.Entry
+	// 为每个标签页维护一个显示文本到完整内容的映射
+	displayTextMap map[string]map[string]string
+}
+
+// NewHistoryManager 创建历史记录管理器
+func NewHistoryManager(selectWidget *widget.Select, inputWidget *widget.Entry) *HistoryManager {
+	return &HistoryManager{
+		currentTab:     CoderTab,
+		historyMap:     make(map[string][]util.HistoryRecord),
+		selectWidget:   selectWidget,
+		inputWidget:    inputWidget,
+		displayTextMap: make(map[string]map[string]string),
+	}
+}
+
+// SetCurrentTab 设置当前标签页
+func (hm *HistoryManager) SetCurrentTab(tabName string) {
+	hm.currentTab = tabName
+}
+
+// LoadHistoryForTab 加载指定标签页的历史记录
+func (hm *HistoryManager) LoadHistoryForTab(tabName string) {
+	// 从数据库获取历史记录
+	records, err := util.GetHistoryDB().GetHistory(tabName, 20) // 获取最近20条记录
+	if err != nil {
+		// 如果获取失败，不显示历史记录
+		return
+	}
+
+	// 保存到内存缓存
+	hm.historyMap[tabName] = records
+
+	// 初始化当前标签页的显示文本映射
+	hm.displayTextMap[tabName] = make(map[string]string)
+
+	// 清空历史记录下拉框
+	hm.selectWidget.Options = []string{"📖 历史记录"}
+
+	// 添加历史记录到下拉框
+	for _, record := range records {
+		// 截取内容的前50个字符作为显示文本
+		displayText := record.Content
+		if len(displayText) > 50 {
+			displayText = displayText[:50] + "..."
+		}
+
+		// 处理重复显示文本的情况
+		originalDisplayText := displayText
+		counter := 1
+		for {
+			// 检查是否已存在相同的显示文本
+			_, exists := hm.displayTextMap[tabName][displayText]
+			if !exists {
+				break
+			}
+			// 如果存在，添加计数器后缀
+			counter++
+			if len(originalDisplayText) > 45 {
+				displayText = originalDisplayText[:45] + fmt.Sprintf("..%d", counter)
+			} else {
+				displayText = originalDisplayText + fmt.Sprintf(" #%d", counter)
+			}
+		}
+
+		// 保存显示文本到完整内容的映射
+		hm.displayTextMap[tabName][displayText] = record.Content
+		hm.selectWidget.Options = append(hm.selectWidget.Options, displayText)
+	}
+
+	// 更新下拉框
+	hm.selectWidget.Refresh()
+}
+
+// SaveHistory 保存历史记录
+func (hm *HistoryManager) SaveHistory(content string) {
+	if content != "" {
+		util.GetHistoryDB().AddHistory(hm.currentTab, content)
+		// 重新加载历史记录
+		hm.LoadHistoryForTab(hm.currentTab)
+	}
+}
+
+// ClearHistory 清除当前标签页的历史记录
+func (hm *HistoryManager) ClearHistory() error {
+	err := util.GetHistoryDB().ClearHistory(hm.currentTab)
+	if err != nil {
+		return err
+	}
+	// 重新加载历史记录
+	hm.LoadHistoryForTab(hm.currentTab)
+	return nil
+}
+
+// SelectHistory 选择历史记录
+func (hm *HistoryManager) SelectHistory(selected string) {
+	if selected != "" && selected != "📖 历史记录" {
+		// 直接使用显示文本映射获取完整内容
+		if contentMap, exists := hm.displayTextMap[hm.currentTab]; exists {
+			if content, exists := contentMap[selected]; exists {
+				hm.inputWidget.SetText(content)
+			}
+		}
+	}
 }

@@ -5,6 +5,7 @@ go 1.20
 require (
 	fyne.io/fyne/v2 v2.5.4
 	github.com/lengzhao/font v0.1.0
+	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/zaneway/cain-go v1.0.0-M5
 )
 
