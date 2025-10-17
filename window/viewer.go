@@ -298,7 +298,7 @@ func createFooter() *fyne.Container {
 	versionLabel.TextStyle = fyne.TextStyle{Italic: true}
 
 	// 状态信息
-	statusLabel := widget.NewLabel("✅ 就绪")
+	statusLabel := widget.NewLabel("✅ 完美")
 	statusLabel.TextStyle = fyne.TextStyle{Monospace: true}
 
 	// 底部布局
