@@ -113,9 +113,9 @@ func showP7bInfo(p7b *PKCS7, box *fyne.Container) {
 	crlCount := widget.NewLabel(fmt.Sprintf("CRL数量: %d", len(p7b.CRLs)))
 	box.Add(crlCount)
 
-	// 显示签名者数量
-	signerCount := widget.NewLabel(fmt.Sprintf("签名者数量: %d", len(p7b.Signers)))
-	box.Add(signerCount)
+	//// 显示签名者数量
+	//signerCount := widget.NewLabel(fmt.Sprintf("签名者数量: %d", len(p7b.Signers)))
+	//box.Add(signerCount)
 
 	// 显示内容长度（如果有）
 	if len(p7b.Content) > 0 {
