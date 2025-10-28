@@ -24,6 +24,7 @@ const (
 	KeyTab         = "🗝️ 密钥工具"
 	EnvelopTab     = "📦 信封解析"
 	P12Tab         = "🎫 P12证书"
+	P7bTab         = "🔗 P7B证书链"
 	CrlTab         = "📜 CRL列表"
 	FormatTab      = "📄 JSON/XML"
 )
@@ -186,6 +187,7 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 		KeyTab:         "📝 密钥生成工具 - 请在下方选择算法并生成密钥，或拖拽密钥文件到此处...",
 		EnvelopTab:     "📝 请输入 Base64/Hex 格式的信封数据 (GMT-0009)，或拖拽文件到此处...",
 		P12Tab:         "📝 请输入 Base64/Hex 格式的证书数据生成 PFX 文件，或拖拽证书文件到此处...",
+		P7bTab:         "📝 请输入 Base64/Hex 格式的 P7B 证书链数据，或拖拽P7B文件到此处...",
 		CrlTab:         "📝 请输入 Base64/Hex 格式的 CRL 数据，或拖拽CRL文件到此处...",
 		FormatTab:      "📝 请输入 JSON 或 XML 数据进行格式化，或拖拽文件到此处...",
 	}
@@ -244,6 +246,7 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 		container.NewTabItemWithIcon(KeyTab, theme.ColorChromaticIcon(), KeyStructure(sharedInput)),
 		container.NewTabItemWithIcon(EnvelopTab, theme.FolderIcon(), SM2EnvelopedPfxStructure(sharedInput)),
 		container.NewTabItemWithIcon(P12Tab, theme.AccountIcon(), SM2PfxStructure(sharedInput)),
+		container.NewTabItemWithIcon(P7bTab, theme.InfoIcon(), P7bStructure(sharedInput)),
 		container.NewTabItemWithIcon(CrlTab, theme.AccountIcon(), CrlStructure(sharedInput)),
 		container.NewTabItemWithIcon(FormatTab, theme.DocumentIcon(), FormatStructure(sharedInput)),
 	)
