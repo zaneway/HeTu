@@ -23,7 +23,7 @@ print_warning() {
 
 # 项目信息
 APP_NAME="HeTu"
-APP_VERSION="1.0.5"
+APP_VERSION="1.0.6"
 APP_DISPLAY_NAME="HeTu 密码学工具箱"
 APP_BUNDLE_ID="com.hetu.cryptotoolbox"
 
