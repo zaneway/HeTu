@@ -302,58 +302,70 @@ func Asn1Structure(input *widget.Entry) *fyne.Container {
 
 			// 预处理检查
 			if len(inputData) > 5*1024*1024 {
-				dialog.ShowError(fmt.Errorf("输入数据过大（%d 字符）", len(inputData)), fyne.CurrentApp().Driver().AllWindows()[0])
-				statusLabel.SetText("解析失败：数据过大")
-				progressBar.Hide()
+				fyne.Do(func() {
+					dialog.ShowError(fmt.Errorf("输入数据过大（%d 字符）", len(inputData)), fyne.CurrentApp().Driver().AllWindows()[0])
+					statusLabel.SetText("解析失败：数据过大")
+					progressBar.Hide()
+				})
 				return
 			}
 
-			statusLabel.SetText("正在清理输入数据...")
-			progressBar.SetValue(0.2)
+			fyne.Do(func() {
+				statusLabel.SetText("正在清理输入数据...")
+				progressBar.SetValue(0.2)
+			})
 
 			cleanedInput := cleanInputForASN1(inputData)
 			if cleanedInput == "" {
-				dialog.ShowError(fmt.Errorf("清理后的数据为空"), fyne.CurrentApp().Driver().AllWindows()[0])
-				statusLabel.SetText("解析失败：数据无效")
-				progressBar.Hide()
+				fyne.Do(func() {
+					dialog.ShowError(fmt.Errorf("清理后的数据为空"), fyne.CurrentApp().Driver().AllWindows()[0])
+					statusLabel.SetText("解析失败：数据无效")
+					progressBar.Hide()
+				})
 				return
 			}
 
-			statusLabel.SetText("正在解码数据...")
-			progressBar.SetValue(0.4)
+			fyne.Do(func() {
+				statusLabel.SetText("正在解码数据...")
+				progressBar.SetValue(0.4)
+			})
 
 			decodedData, err := base64.StdEncoding.DecodeString(cleanedInput)
 			if err != nil {
 				decodedData, err = hex.DecodeString(cleanedInput)
 				if err != nil {
-					dialog.ShowError(fmt.Errorf("无法解码输入数据\nBase64错误: %v\nHex错误: %v", err, err), fyne.CurrentApp().Driver().AllWindows()[0])
-					statusLabel.SetText("解析失败：解码错误")
-					progressBar.Hide()
+					fyne.Do(func() {
+						dialog.ShowError(fmt.Errorf("无法解码输入数据\nBase64错误: %v\nHex错误: %v", err, err), fyne.CurrentApp().Driver().AllWindows()[0])
+						statusLabel.SetText("解析失败：解码错误")
+						progressBar.Hide()
+					})
 					return
 				}
 			}
 
 			if len(decodedData) < 2 || len(decodedData) > 2*1024*1024 {
-				dialog.ShowError(fmt.Errorf("解码后数据大小异常（%d 字节）", len(decodedData)), fyne.CurrentApp().Driver().AllWindows()[0])
-				statusLabel.SetText("解析失败：数据大小异常")
-				progressBar.Hide()
+				fyne.Do(func() {
+					dialog.ShowError(fmt.Errorf("解码后数据大小异常（%d 字节）", len(decodedData)), fyne.CurrentApp().Driver().AllWindows()[0])
+					statusLabel.SetText("解析失败：数据大小异常")
+					progressBar.Hide()
+				})
 				return
 			}
 
-			statusLabel.SetText("正在解析ASN.1结构...")
-			progressBar.SetValue(0.7)
+			fyne.Do(func() {
+				statusLabel.SetText("正在解析ASN.1结构...")
+				progressBar.SetValue(0.7)
+			})
 
 			rootNode := ParseAsn1(decodedData)
 
-			statusLabel.SetText("正在构建树状视图...")
-			progressBar.SetValue(0.9)
+			fyne.Do(func() {
+				statusLabel.SetText("正在构建树状视图...")
+				progressBar.SetValue(0.9)
+			})
 
 			// 更新UI
 			rootAccordionItem = buildAccordion(rootNode, 0)
-			if accordion.Items != nil && len(accordion.Items) > 0 {
-				accordion.RemoveIndex(0)
-			}
-			accordion.Append(rootAccordionItem)
 
 			// 显示统计信息
 			childrenCount := countChildren(rootNode)
@@ -367,18 +379,28 @@ func Asn1Structure(input *widget.Entry) *fyne.Container {
 					"- 根节点类型: %s",
 				len(decodedData), childrenCount, maxDepth, getRealTag(rootNode.Tag)))
 
-			statsContainer.RemoveAll()
-			statsContainer.Add(statsInfo)
-			statsContainer.Show()
+			fyne.Do(func() {
+				if accordion.Items != nil && len(accordion.Items) > 0 {
+					accordion.RemoveIndex(0)
+				}
+				accordion.Append(rootAccordionItem)
 
-			statusLabel.SetText("✅ 解析完成")
-			progressBar.SetValue(1.0)
+				statsContainer.RemoveAll()
+				statsContainer.Add(statsInfo)
+				statsContainer.Show()
+
+				statusLabel.SetText("✅ 解析完成")
+				progressBar.SetValue(1.0)
+			})
+
 			time.Sleep(time.Second)
-			progressBar.Hide()
 
-			if rootNode.Error != "" {
-				statusLabel.SetText(fmt.Sprintf("⚠️ 解析完成但有警告: %s", rootNode.Error))
-			}
+			fyne.Do(func() {
+				progressBar.Hide()
+				if rootNode.Error != "" {
+					statusLabel.SetText(fmt.Sprintf("⚠️ 解析完成但有警告: %s", rootNode.Error))
+				}
+			})
 		}()
 	})
 

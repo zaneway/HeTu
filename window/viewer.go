@@ -322,7 +322,10 @@ func refreshTimeSeconds() *widget.Label {
 	//异步线程更新时间
 	go func() {
 		for range time.Tick(time.Second) {
-			nowTime.SetText(time.Now().Format(util.DateTime))
+			// 使用 fyne.Do 确保在正确的线程中更新 UI
+			fyne.Do(func() {
+				nowTime.SetText(time.Now().Format(util.DateTime))
+			})
 		}
 	}()
 	return nowTime

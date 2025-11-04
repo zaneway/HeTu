@@ -84,14 +84,18 @@ func KeyStructure(input *widget.Entry) *fyne.Container {
 
 			keyData, err := generateKey(selectedAlg)
 			if err != nil {
-				dialog.ShowError(fmt.Errorf("密钥生成失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
-				statusLabel.SetText("❌ 密钥生成失败")
+				fyne.Do(func() {
+					dialog.ShowError(fmt.Errorf("密钥生成失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
+					statusLabel.SetText("❌ 密钥生成失败")
+				})
 				return
 			}
 
 			currentKeyData = keyData
-			displayKeyInfo(keyDisplayArea, keyData)
-			statusLabel.SetText("✅ 密钥生成成功")
+			fyne.Do(func() {
+				displayKeyInfo(keyDisplayArea, keyData)
+				statusLabel.SetText("✅ 密钥生成成功")
+			})
 		}()
 	})
 
@@ -113,13 +117,17 @@ func KeyStructure(input *widget.Entry) *fyne.Container {
 		go func() {
 			encryptedData, err := encryptData(currentKeyData, inputData)
 			if err != nil {
-				dialog.ShowError(fmt.Errorf("加密失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
-				statusLabel.SetText("❌ 加密失败")
+				fyne.Do(func() {
+					dialog.ShowError(fmt.Errorf("加密失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
+					statusLabel.SetText("❌ 加密失败")
+				})
 				return
 			}
 
-			resultArea.SetText(fmt.Sprintf("🔒 加密结果 (%s):\n%s", currentKeyData.Algorithm, encryptedData))
-			statusLabel.SetText("✅ 加密完成")
+			fyne.Do(func() {
+				resultArea.SetText(fmt.Sprintf("🔒 加密结果 (%s):\n%s", currentKeyData.Algorithm, encryptedData))
+				statusLabel.SetText("✅ 加密完成")
+			})
 		}()
 	})
 
@@ -141,13 +149,17 @@ func KeyStructure(input *widget.Entry) *fyne.Container {
 		go func() {
 			decryptedData, err := decryptData(currentKeyData, inputData)
 			if err != nil {
-				dialog.ShowError(fmt.Errorf("解密失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
-				statusLabel.SetText("❌ 解密失败")
+				fyne.Do(func() {
+					dialog.ShowError(fmt.Errorf("解密失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
+					statusLabel.SetText("❌ 解密失败")
+				})
 				return
 			}
 
-			resultArea.SetText(fmt.Sprintf("🔓 解密结果 (%s):\n%s", currentKeyData.Algorithm, decryptedData))
-			statusLabel.SetText("✅ 解密完成")
+			fyne.Do(func() {
+				resultArea.SetText(fmt.Sprintf("🔓 解密结果 (%s):\n%s", currentKeyData.Algorithm, decryptedData))
+				statusLabel.SetText("✅ 解密完成")
+			})
 		}()
 	})
 
