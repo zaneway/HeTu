@@ -35,7 +35,8 @@
 
 # 快速开始
 1. 安装依赖库：go get fyne.io/fyne/v2/cmd/fyne@latest
-2. 安装包构建脚本：
+2. 安装依赖库：go get github.com/mattn/go-sqlite3
+3. 安装包构建脚本：
 ```shell
 # 提供了Windows、MacOS的打包脚本,直接执行即可.
 sh build-macos-app.sh
