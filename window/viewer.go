@@ -238,35 +238,8 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 	inputContainer.Add(historyContainer)
 	inputContainer.Add(widget.NewSeparator())
 
-	// 创建美化的标签页
-	tabs := container.NewAppTabs(
-		container.NewTabItemWithIcon(CoderTab, theme.ZoomInIcon(), CoderStructure(sharedInput)),
-		container.NewTabItemWithIcon(CertificateTab, theme.InfoIcon(), CertificateStructure(sharedInput)),
-		container.NewTabItemWithIcon(Asn1Tab, theme.ZoomInIcon(), Asn1Structure(sharedInput)),
-		container.NewTabItemWithIcon(KeyTab, theme.ColorChromaticIcon(), KeyStructure(sharedInput)),
-		container.NewTabItemWithIcon(EnvelopTab, theme.FolderIcon(), SM2EnvelopedPfxStructure(sharedInput)),
-		container.NewTabItemWithIcon(P12Tab, theme.AccountIcon(), SM2PfxStructure(sharedInput)),
-		container.NewTabItemWithIcon(P7bTab, theme.InfoIcon(), P7bStructure(sharedInput)),
-		container.NewTabItemWithIcon(CrlTab, theme.AccountIcon(), CrlStructure(sharedInput)),
-		container.NewTabItemWithIcon(FormatTab, theme.DocumentIcon(), FormatStructure(sharedInput)),
-	)
-
-	// 设置标签页样式
-	tabs.SetTabLocation(container.TabLocationTop)
-
-	// 设置标签页切换时的占位符更新和历史记录加载
-	tabs.OnSelected = func(tab *container.TabItem) {
-		if placeholder, exists := placeholders[tab.Text]; exists {
-			sharedInput.SetPlaceHolder(placeholder)
-			sharedInput.Refresh()
-		}
-
-		// 更新当前标签页
-		historyManager.SetCurrentTab(tab.Text)
-
-		// 加载该标签页的历史记录
-		historyManager.LoadHistoryForTab(tab.Text)
-	}
+	// 创建多行标签页（使用自定义布局）
+	tabs := createMultiRowTabs(sharedInput, placeholders, historyManager)
 
 	// 设置默认占位符（编码转换）
 	sharedInput.SetPlaceHolder(placeholders[CoderTab])
@@ -314,6 +287,101 @@ func createFooter() *fyne.Container {
 	)
 
 	return container.NewPadded(footerContainer)
+}
+
+// createMultiRowTabs 创建多行显示的标签页
+func createMultiRowTabs(sharedInput *widget.Entry, placeholders map[string]string, historyManager *HistoryManager) *fyne.Container {
+	// 定义所有标签页的数据
+	tabItems := []struct {
+		name    string
+		icon    fyne.Resource
+		content func() *fyne.Container
+	}{
+		{CoderTab, theme.ZoomInIcon(), func() *fyne.Container { return CoderStructure(sharedInput) }},
+		{CertificateTab, theme.InfoIcon(), func() *fyne.Container { return CertificateStructure(sharedInput) }},
+		{Asn1Tab, theme.ZoomInIcon(), func() *fyne.Container { return Asn1Structure(sharedInput) }},
+		{KeyTab, theme.ColorChromaticIcon(), func() *fyne.Container { return KeyStructure(sharedInput) }},
+		{EnvelopTab, theme.FolderIcon(), func() *fyne.Container { return SM2EnvelopedPfxStructure(sharedInput) }},
+		{P12Tab, theme.AccountIcon(), func() *fyne.Container { return SM2PfxStructure(sharedInput) }},
+		{P7bTab, theme.InfoIcon(), func() *fyne.Container { return P7bStructure(sharedInput) }},
+		{CrlTab, theme.AccountIcon(), func() *fyne.Container { return CrlStructure(sharedInput) }},
+		{FormatTab, theme.DocumentIcon(), func() *fyne.Container { return FormatStructure(sharedInput) }},
+	}
+
+	// 创建内容容器
+	contentContainer := container.NewStack()
+
+	// 初始化显示第一个标签页的内容
+	if len(tabItems) > 0 {
+		contentContainer.Add(tabItems[0].content())
+	}
+
+	// 创建标签按钮容器（使用网格布局支持多行）
+	var tabButtons []fyne.CanvasObject
+	for i, item := range tabItems {
+		index := i // 捕获索引
+		tabName := item.name
+
+		// 创建标签按钮
+		tabBtn := widget.NewButtonWithIcon(tabName, item.icon, func() {
+			// 移除旧内容
+			contentContainer.RemoveAll()
+
+			// 添加新内容
+			contentContainer.Add(item.content())
+
+			// 更新按钮样式（高亮当前选中的标签）
+			for j, btn := range tabButtons {
+				if button, ok := btn.(*widget.Button); ok {
+					if j == index {
+						button.Importance = widget.HighImportance
+					} else {
+						button.Importance = widget.MediumImportance
+					}
+					// 刷新按钮以更新显示
+					button.Refresh()
+				}
+			}
+
+			// 更新占位符
+			if placeholder, exists := placeholders[tabName]; exists {
+				sharedInput.SetPlaceHolder(placeholder)
+				sharedInput.Refresh()
+			}
+
+			// 更新当前标签页
+			historyManager.SetCurrentTab(tabName)
+
+			// 加载该标签页的历史记录
+			historyManager.LoadHistoryForTab(tabName)
+
+			contentContainer.Refresh()
+		})
+
+		// 设置第一个按钮为高亮
+		if i == 0 {
+			tabBtn.Importance = widget.HighImportance
+		} else {
+			tabBtn.Importance = widget.MediumImportance
+		}
+
+		tabButtons = append(tabButtons, tabBtn)
+	}
+
+	// 使用网格布局，每行最多显示5个标签，自动换行
+	// 使用 container.NewAdaptiveGrid 可以自动适应窗口大小
+	tabButtonsContainer := container.NewGridWithColumns(5, tabButtons...)
+
+	// 将标签按钮容器和内容容器组合
+	result := container.NewBorder(
+		tabButtonsContainer, // 顶部：标签按钮（多行显示）
+		nil,                 // 底部
+		nil,                 // 左侧
+		nil,                 // 右侧
+		contentContainer,    // 中心：标签页内容
+	)
+
+	return result
 }
 
 func refreshTimeSeconds() *widget.Label {
