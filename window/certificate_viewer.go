@@ -72,7 +72,9 @@ func CertificateStructure(input *widget.Entry) *fyne.Container {
 
 			// 检查是否是PEM格式（更严格的检查）
 			trimmedInput := strings.TrimSpace(inputCert)
-			if strings.HasPrefix(trimmedInput, "-----BEGIN CERTIFICATE-----") {
+			if strings.HasPrefix(trimmedInput, "-----BEGIN CERTIFICATE-----") ||
+				strings.HasPrefix(trimmedInput, "-----BEGIN X509 CERTIFICATE-----") ||
+				strings.Contains(trimmedInput, "-----BEGIN CERTIFICATE-----") {
 				isPEMFormat = true
 				// 尝试处理PEM格式证书
 				decodeCert, err = parsePEMCertificate(inputCert)
@@ -90,18 +92,27 @@ func CertificateStructure(input *widget.Entry) *fyne.Container {
 				// 清理输入数据，移除空格和换行符
 				cleanedInput := cleanInputData(inputCert)
 
-				// 尝试Base64解码
+				// 尝试Base64解码（支持多种Base64格式）
 				decodeCert, err = base64.StdEncoding.DecodeString(cleanedInput)
 				if err != nil {
-					// 如果Base64失败，尝试Hex解码
-					decodeCert, err = hex.DecodeString(cleanedInput)
+					// 尝试URL-safe Base64
+					decodeCert, err = base64.URLEncoding.DecodeString(cleanedInput)
 					if err != nil {
-						fyne.Do(func() {
-							progressBar.Hide()
-							dialog.ShowError(fmt.Errorf("无法解码输入数据，请确保输入的是有效的Base64、Hex或PEM格式证书数据\n\n输入数据长度: %d\n清理后数据长度: %d\n\nBase64错误: %v\nHex错误: %v", len(inputCert), len(cleanedInput), err, err), fyne.CurrentApp().Driver().AllWindows()[0])
-							statusLabel.SetText("数据解码失败")
-						})
-						return
+						// 尝试添加填充后解码
+						cleanedWithPadding := addBase64Padding(cleanedInput)
+						decodeCert, err = base64.StdEncoding.DecodeString(cleanedWithPadding)
+						if err != nil {
+							// 如果Base64失败，尝试Hex解码
+							decodeCert, err = hex.DecodeString(cleanedInput)
+							if err != nil {
+								fyne.Do(func() {
+									progressBar.Hide()
+									dialog.ShowError(fmt.Errorf("无法解码输入数据，请确保输入的是有效的Base64、Hex或PEM格式证书数据\n\n输入数据长度: %d\n清理后数据长度: %d\n\nBase64错误: %v\nHex错误: %v\n\n提示：如果数据是Base64编码，请确保数据完整且格式正确", len(inputCert), len(cleanedInput), err, err), fyne.CurrentApp().Driver().AllWindows()[0])
+									statusLabel.SetText("数据解码失败")
+								})
+								return
+							}
+						}
 					}
 				}
 			}
@@ -1293,18 +1304,39 @@ func parsePEMCertificate(pemData string) ([]byte, error) {
 	// 清理输入数据，移除多余的空格和换行
 	pemData = strings.TrimSpace(pemData)
 
-	// 解析PEM块
-	block, _ := pem.Decode([]byte(pemData))
-	if block == nil {
-		return nil, fmt.Errorf("无法解析PEM数据，请检查格式是否正确")
+	// 解析PEM块（可能包含多个块）
+	var certificateData []byte
+	var hasCertificate bool
+
+	rest := []byte(pemData)
+	for len(rest) > 0 {
+		block, remaining := pem.Decode(rest)
+		if block == nil {
+			if !hasCertificate {
+				return nil, fmt.Errorf("无法解析PEM数据，请检查格式是否正确")
+			}
+			break
+		}
+
+		// 检查PEM块类型，支持多种证书格式
+		if block.Type == "CERTIFICATE" || block.Type == "X509 CERTIFICATE" || block.Type == "TRUSTED CERTIFICATE" {
+			if !hasCertificate {
+				// 使用第一个证书块
+				certificateData = block.Bytes
+				hasCertificate = true
+			}
+			// 如果有多个证书块，可以在这里处理证书链
+			// 目前只返回第一个证书
+		}
+
+		rest = remaining
 	}
 
-	// 检查PEM块类型
-	if block.Type != "CERTIFICATE" {
-		return nil, fmt.Errorf("PEM块类型不正确，期望为CERTIFICATE，实际为: %s", block.Type)
+	if !hasCertificate {
+		return nil, fmt.Errorf("未找到有效的CERTIFICATE块，请检查PEM格式是否正确")
 	}
 
-	return block.Bytes, nil
+	return certificateData, nil
 }
 
 // cleanInputData 清理输入数据，移除可能影响解析的字符
@@ -1315,6 +1347,19 @@ func cleanInputData(input string) string {
 	cleaned = strings.ReplaceAll(cleaned, "\r", "")
 	cleaned = strings.ReplaceAll(cleaned, "\t", "")
 	return strings.TrimSpace(cleaned)
+}
+
+// addBase64Padding 为Base64字符串添加填充
+func addBase64Padding(s string) string {
+	// Base64编码要求长度是4的倍数，添加必要的填充
+	switch len(s) % 4 {
+	case 2:
+		return s + "=="
+	case 3:
+		return s + "="
+	default:
+		return s
+	}
 }
 
 // FallbackParsingForTest 是fallbackParsing的导出版本，用于测试
