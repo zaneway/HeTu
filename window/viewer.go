@@ -304,7 +304,7 @@ func createMultiRowTabs(sharedInput *widget.Entry, placeholders map[string]strin
 		{Asn1Tab, theme.ZoomInIcon(), func() *fyne.Container { return Asn1Structure(sharedInput) }},
 		{KeyTab, theme.ColorChromaticIcon(), func() *fyne.Container { return KeyStructure(sharedInput) }},
 		{EnvelopTab, theme.FolderIcon(), func() *fyne.Container { return SM2EnvelopedPfxStructure(sharedInput) }},
-		{P10Tab, theme.DocumentIcon(), func() *fyne.Container { return P10Structure(sharedInput) }},
+		//{P10Tab, theme.DocumentIcon(), func() *fyne.Container { return P10Structure(sharedInput) }},
 		{P12Tab, theme.AccountIcon(), func() *fyne.Container { return SM2PfxStructure(sharedInput) }},
 		{P7bTab, theme.InfoIcon(), func() *fyne.Container { return P7bStructure(sharedInput) }},
 		{CrlTab, theme.AccountIcon(), func() *fyne.Container { return CrlStructure(sharedInput) }},
