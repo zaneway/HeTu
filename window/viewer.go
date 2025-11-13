@@ -23,6 +23,7 @@ const (
 	Asn1Tab        = "🌳 ASN.1结构"
 	KeyTab         = "🗝️ 密钥工具"
 	EnvelopTab     = "📦 信封解析"
+	P10Tab         = "📝 P10请求"
 	P12Tab         = "🎫 P12证书"
 	P7bTab         = "🔗 P7B证书链"
 	CrlTab         = "📜 CRL列表"
@@ -186,6 +187,7 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 		Asn1Tab:        "📝 请输入 Base64/Hex 格式的 ASN.1 数据进行解析，或拖拽文件到此处...",
 		KeyTab:         "📝 密钥生成工具 - 请在下方选择算法并生成密钥，或拖拽密钥文件到此处...",
 		EnvelopTab:     "📝 请输入 Base64/Hex 格式的信封数据 (GMT-0009)，或拖拽文件到此处...",
+		P10Tab:         "📝 请输入 Base64/Hex 格式的 P10 证书签名请求数据，或拖拽P10文件到此处...",
 		P12Tab:         "📝 请输入 Base64/Hex 格式的证书数据生成 PFX 文件，或拖拽证书文件到此处...",
 		P7bTab:         "📝 请输入 Base64/Hex 格式的 P7B 证书链数据，或拖拽P7B文件到此处...",
 		CrlTab:         "📝 请输入 Base64/Hex 格式的 CRL 数据，或拖拽CRL文件到此处...",
@@ -302,6 +304,7 @@ func createMultiRowTabs(sharedInput *widget.Entry, placeholders map[string]strin
 		{Asn1Tab, theme.ZoomInIcon(), func() *fyne.Container { return Asn1Structure(sharedInput) }},
 		{KeyTab, theme.ColorChromaticIcon(), func() *fyne.Container { return KeyStructure(sharedInput) }},
 		{EnvelopTab, theme.FolderIcon(), func() *fyne.Container { return SM2EnvelopedPfxStructure(sharedInput) }},
+		{P10Tab, theme.DocumentIcon(), func() *fyne.Container { return P10Structure(sharedInput) }},
 		{P12Tab, theme.AccountIcon(), func() *fyne.Container { return SM2PfxStructure(sharedInput) }},
 		{P7bTab, theme.InfoIcon(), func() *fyne.Container { return P7bStructure(sharedInput) }},
 		{CrlTab, theme.AccountIcon(), func() *fyne.Container { return CrlStructure(sharedInput) }},
@@ -321,6 +324,8 @@ func createMultiRowTabs(sharedInput *widget.Entry, placeholders map[string]strin
 	for i, item := range tabItems {
 		index := i // 捕获索引
 		tabName := item.name
+		// 捕获内容函数，避免闭包问题
+		contentFunc := item.content
 
 		// 创建标签按钮
 		tabBtn := widget.NewButtonWithIcon(tabName, item.icon, func() {
@@ -328,7 +333,7 @@ func createMultiRowTabs(sharedInput *widget.Entry, placeholders map[string]strin
 			contentContainer.RemoveAll()
 
 			// 添加新内容
-			contentContainer.Add(item.content())
+			contentContainer.Add(contentFunc())
 
 			// 更新按钮样式（高亮当前选中的标签）
 			for j, btn := range tabButtons {

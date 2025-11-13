@@ -26,8 +26,13 @@ func CertificateStructure(input *widget.Entry) *fyne.Container {
 	//input := buildInputCertEntry("Please input base64/hex cert")
 
 	//inputCertEntry.Text = "MIICETCCAbWgAwIBAgINKl81oFaaablKOp0YTjAMBggqgRzPVQGDdQUAMGExCzAJBgNVBAYMAkNOMQ0wCwYDVQQKDARCSkNBMSUwIwYDVQQLDBxCSkNBIEFueXdyaXRlIFRydXN0IFNlcnZpY2VzMRwwGgYDVQQDDBNUcnVzdC1TaWduIFNNMiBDQS0xMB4XDTIwMDgxMzIwMTkzNFoXDTIwMTAyNDE1NTk1OVowHjELMAkGA1UEBgwCQ04xDzANBgNVBAMMBuWGr+i9rDBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABAIF97Sqq0Rv616L2PjFP3xt16QGJLmi+W8Ht+NLHiXntgUey0Nz+ZVnSUKUMzkKuGTikY3h2v7la20b6lpKo8WjgZIwgY8wCwYDVR0PBAQDAgbAMB0GA1UdDgQWBBSxiaS6z4Uguz3MepS2zblkuAF/LTAfBgNVHSMEGDAWgBTMZyRCGsP4rSes0vLlhIEf6cUvrjBABgNVHSAEOTA3MDUGCSqBHIbvMgICAjAoMCYGCCsGAQUFBwIBFhpodHRwOi8vd3d3LmJqY2Eub3JnLmNuL2NwczAMBggqgRzPVQGDdQUAA0gAMEUCIG6n6PG0BOK1EdFcvetQlC+9QhpsTuTui2wkeqWiPKYWAiEAvqR8Z+tSiYR5DIs7SyHJPWZ+sa8brtQL/1jURvHGxU8="
+	// 创建状态标签和进度条
+	statusLabel := widget.NewLabel("准备解析证书...")
+	progressBar := widget.NewProgressBar()
+	progressBar.Hide()
+
 	//确认按钮
-	confirm := buildButton("确认", theme.ConfirmIcon(), func() {
+	confirm := widget.NewButtonWithIcon("确认", theme.ConfirmIcon(), func() {
 		inputCert := strings.TrimSpace(input.Text)
 		if inputCert == "" {
 			dialog.ShowError(fmt.Errorf("请输入证书数据"), fyne.CurrentApp().Driver().AllWindows()[0])
@@ -44,60 +49,116 @@ func CertificateStructure(input *widget.Entry) *fyne.Container {
 			}
 		}
 
+		// 清除旧内容并显示进度
 		detail.RemoveAll()
+		statusLabel.SetText("正在解析证书...")
+		progressBar.Show()
+		progressBar.SetValue(0.1)
+		detail.Add(statusLabel)
+		detail.Add(progressBar)
+		detail.Refresh()
 
-		// 尝试Base64解码
-		var decodeCert []byte
-		var err error
-
-		// 检查是否是PEM格式
-		if strings.Contains(inputCert, "-----BEGIN CERTIFICATE-----") {
-			// 处理PEM格式证书
-			decodeCert, err = parsePEMCertificate(inputCert)
-			if err != nil {
-				dialog.ShowError(fmt.Errorf("PEM格式证书解析失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
-				return
-			}
-		} else {
-			// 清理输入数据，移除空格和换行符
-			cleanedInput := cleanInputData(inputCert)
+		// 在后台 goroutine 中执行解析操作
+		go func() {
+			fyne.Do(func() {
+				statusLabel.SetText("正在解码证书数据...")
+				progressBar.SetValue(0.3)
+			})
 
 			// 尝试Base64解码
-			decodeCert, err = base64.StdEncoding.DecodeString(cleanedInput)
-			if err != nil {
-				// 如果Base64失败，尝试Hex解码
-				decodeCert, err = hex.DecodeString(cleanedInput)
+			var decodeCert []byte
+			var err error
+			var isPEMFormat bool
+
+			// 检查是否是PEM格式（更严格的检查）
+			trimmedInput := strings.TrimSpace(inputCert)
+			if strings.HasPrefix(trimmedInput, "-----BEGIN CERTIFICATE-----") {
+				isPEMFormat = true
+				// 尝试处理PEM格式证书
+				decodeCert, err = parsePEMCertificate(inputCert)
 				if err != nil {
-					dialog.ShowError(fmt.Errorf("无法解码输入数据，请确保输入的是有效的Base64、Hex或PEM格式证书数据\n\n输入数据长度: %d\n清理后数据长度: %d\n\nBase64错误: %v\nHex错误: %v", len(inputCert), len(cleanedInput), err, err), fyne.CurrentApp().Driver().AllWindows()[0])
-					return
+					// PEM解析失败，回退到Base64/Hex解码
+					fyne.Do(func() {
+						statusLabel.SetText("PEM解析失败，尝试Base64/Hex解码...")
+					})
+					isPEMFormat = false
 				}
 			}
-		}
 
-		// 验证解码后的数据长度
-		if len(decodeCert) < 50 { // 证书通常至少有几百字节
-			dialog.ShowError(fmt.Errorf("解码后的数据太短（%d 字节），不像是有效的证书数据", len(decodeCert)), fyne.CurrentApp().Driver().AllWindows()[0])
-			return
-		}
+			// 如果不是PEM格式，或者PEM解析失败，尝试Base64/Hex解码
+			if !isPEMFormat {
+				// 清理输入数据，移除空格和换行符
+				cleanedInput := cleanInputData(inputCert)
 
-		// 解析证书
-		certificate, err := helper.ParseCertificate(decodeCert)
-		if err != nil {
-			dialog.ShowError(fmt.Errorf("证书解析失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
-			return
-		}
+				// 尝试Base64解码
+				decodeCert, err = base64.StdEncoding.DecodeString(cleanedInput)
+				if err != nil {
+					// 如果Base64失败，尝试Hex解码
+					decodeCert, err = hex.DecodeString(cleanedInput)
+					if err != nil {
+						fyne.Do(func() {
+							progressBar.Hide()
+							dialog.ShowError(fmt.Errorf("无法解码输入数据，请确保输入的是有效的Base64、Hex或PEM格式证书数据\n\n输入数据长度: %d\n清理后数据长度: %d\n\nBase64错误: %v\nHex错误: %v", len(inputCert), len(cleanedInput), err, err), fyne.CurrentApp().Driver().AllWindows()[0])
+							statusLabel.SetText("数据解码失败")
+						})
+						return
+					}
+				}
+			}
 
-		//构造证书解析详情
-		keys, value := buildCertificateDetail(certificate)
+			// 验证解码后的数据长度
+			if len(decodeCert) < 50 { // 证书通常至少有几百字节
+				fyne.Do(func() {
+					progressBar.Hide()
+					dialog.ShowError(fmt.Errorf("解码后的数据太短（%d 字节），不像是有效的证书数据", len(decodeCert)), fyne.CurrentApp().Driver().AllWindows()[0])
+					statusLabel.SetText("数据长度不足")
+				})
+				return
+			}
 
-		//展示证书详情
-		showCertificateDetail(keys, value, detail)
+			fyne.Do(func() {
+				statusLabel.SetText("正在解析证书结构...")
+				progressBar.SetValue(0.6)
+			})
 
-		// 解析并展示证书扩展项
-		if len(certificate.Extensions) > 0 {
-			extensionKeys, extensionValues := buildCertificateExtensions(certificate)
-			showCertificateExtensions(extensionKeys, extensionValues, detail)
-		}
+			// 解析证书
+			certificate, err := helper.ParseCertificate(decodeCert)
+			if err != nil {
+				fyne.Do(func() {
+					progressBar.Hide()
+					dialog.ShowError(fmt.Errorf("证书解析失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
+					statusLabel.SetText("证书解析失败")
+				})
+				return
+			}
+
+			fyne.Do(func() {
+				statusLabel.SetText("正在构建证书详情...")
+				progressBar.SetValue(0.8)
+			})
+
+			//构造证书解析详情
+			keys, value := buildCertificateDetail(certificate)
+
+			// 更新UI显示结果
+			fyne.Do(func() {
+				statusLabel.SetText("正在显示结果...")
+				progressBar.SetValue(0.9)
+
+				//展示证书详情
+				detail.RemoveAll()
+				showCertificateDetail(keys, value, detail)
+
+				// 解析并展示证书扩展项
+				if len(certificate.Extensions) > 0 {
+					extensionKeys, extensionValues := buildCertificateExtensions(certificate)
+					showCertificateExtensions(extensionKeys, extensionValues, detail)
+				}
+
+				progressBar.Hide()
+				detail.Refresh()
+			})
+		}()
 	})
 	//清除按钮
 	clear := buildButton("清除", theme.CancelIcon(), func() {

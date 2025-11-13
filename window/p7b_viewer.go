@@ -22,6 +22,11 @@ func P7bStructure(input *widget.Entry) *fyne.Container {
 	structure := container.NewVBox()
 	detail := container.NewVBox()
 
+	// 创建状态标签和进度条
+	statusLabel := widget.NewLabel("准备解析P7B证书链...")
+	progressBar := widget.NewProgressBar()
+	progressBar.Hide()
+
 	//确认按钮
 	confirm := widget.NewButtonWithIcon("确认", theme.ConfirmIcon(), func() {
 		inputData := strings.TrimSpace(input.Text)
@@ -40,45 +45,92 @@ func P7bStructure(input *widget.Entry) *fyne.Container {
 			}
 		}
 
+		// 清除旧内容并显示进度
 		detail.RemoveAll()
+		statusLabel.SetText("正在解析P7B证书链...")
+		progressBar.Show()
+		progressBar.SetValue(0.1)
+		detail.Add(statusLabel)
+		detail.Add(progressBar)
+		detail.Refresh()
 
-		// 尝试Base64解码
-		var decodeData []byte
-		var err error
+		// 在后台 goroutine 中执行解析操作
+		go func() {
+			fyne.Do(func() {
+				statusLabel.SetText("正在解码数据...")
+				progressBar.SetValue(0.3)
+			})
 
-		// 清理输入数据，移除空格和换行符
-		cleanedInput := strings.ReplaceAll(inputData, " ", "")
-		cleanedInput = strings.ReplaceAll(cleanedInput, "\n", "")
-		cleanedInput = strings.ReplaceAll(cleanedInput, "\r", "")
-		cleanedInput = strings.ReplaceAll(cleanedInput, "\t", "")
-		cleanedInput = strings.TrimSpace(cleanedInput)
+			// 尝试Base64解码
+			var decodeData []byte
+			var err error
 
-		// 尝试Base64解码
-		decodeData, err = base64.StdEncoding.DecodeString(cleanedInput)
-		if err != nil {
-			// 如果Base64失败，尝试Hex解码
-			decodeData, err = hex.DecodeString(cleanedInput)
+			// 清理输入数据，移除空格和换行符
+			cleanedInput := strings.ReplaceAll(inputData, " ", "")
+			cleanedInput = strings.ReplaceAll(cleanedInput, "\n", "")
+			cleanedInput = strings.ReplaceAll(cleanedInput, "\r", "")
+			cleanedInput = strings.ReplaceAll(cleanedInput, "\t", "")
+			cleanedInput = strings.TrimSpace(cleanedInput)
+
+			// 尝试Base64解码
+			decodeData, err = base64.StdEncoding.DecodeString(cleanedInput)
 			if err != nil {
-				dialog.ShowError(fmt.Errorf("无法解码输入数据，请确保输入的是有效的Base64或Hex格式P7B数据\n\n输入数据长度: %d\n清理后数据长度: %d\n\nBase64错误: %v\nHex错误: %v", len(inputData), len(cleanedInput), err, err), fyne.CurrentApp().Driver().AllWindows()[0])
+				// 如果Base64失败，尝试Hex解码
+				decodeData, err = hex.DecodeString(cleanedInput)
+				if err != nil {
+					fyne.Do(func() {
+						progressBar.Hide()
+						dialog.ShowError(fmt.Errorf("无法解码输入数据，请确保输入的是有效的Base64或Hex格式P7B数据\n\n输入数据长度: %d\n清理后数据长度: %d\n\nBase64错误: %v\nHex错误: %v", len(inputData), len(cleanedInput), err, err), fyne.CurrentApp().Driver().AllWindows()[0])
+						statusLabel.SetText("数据解码失败")
+					})
+					return
+				}
+			}
+
+			// 验证解码后的数据长度
+			if len(decodeData) < 50 { // P7B通常至少有几百字节
+				fyne.Do(func() {
+					progressBar.Hide()
+					dialog.ShowError(fmt.Errorf("解码后的数据太短（%d 字节），不像是有效的P7B数据", len(decodeData)), fyne.CurrentApp().Driver().AllWindows()[0])
+					statusLabel.SetText("数据长度不足")
+				})
 				return
 			}
-		}
 
-		// 验证解码后的数据长度
-		if len(decodeData) < 50 { // P7B通常至少有几百字节
-			dialog.ShowError(fmt.Errorf("解码后的数据太短（%d 字节），不像是有效的P7B数据", len(decodeData)), fyne.CurrentApp().Driver().AllWindows()[0])
-			return
-		}
+			fyne.Do(func() {
+				statusLabel.SetText("正在解析P7B结构...")
+				progressBar.SetValue(0.6)
+			})
 
-		// 解析P7B证书链
-		p7b, err := ParsePKCS7(decodeData)
-		if err != nil {
-			dialog.ShowError(fmt.Errorf("P7B证书链解析失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
-			return
-		}
+			// 解析P7B证书链
+			p7b, err := ParsePKCS7(decodeData)
+			if err != nil {
+				fyne.Do(func() {
+					progressBar.Hide()
+					dialog.ShowError(fmt.Errorf("P7B证书链解析失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
+					statusLabel.SetText("P7B解析失败")
+				})
+				return
+			}
 
-		// 显示P7B信息
-		showP7bInfo(p7b, detail)
+			fyne.Do(func() {
+				statusLabel.SetText("正在构建证书链信息...")
+				progressBar.SetValue(0.8)
+			})
+
+			// 更新UI显示结果
+			fyne.Do(func() {
+				statusLabel.SetText("正在显示结果...")
+				progressBar.SetValue(0.9)
+
+				// 显示P7B信息
+				detail.RemoveAll()
+				showP7bInfo(p7b, detail)
+
+				progressBar.Hide()
+				detail.Refresh()
+			})
+		}()
 	})
 
 	//清除按钮
