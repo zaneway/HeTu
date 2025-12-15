@@ -2,6 +2,9 @@ package window
 
 import (
 	"HeTu/helper"
+	"encoding/base64"
+	"encoding/hex"
+	"encoding/pem"
 	"fmt"
 	"strings"
 
@@ -34,6 +37,78 @@ func CrlStructure(input *widget.Entry) *fyne.Container {
 
 	// 当前加载的CRL信息
 	var currentCRLInfo *helper.CRLInfo
+
+	// 解析CRL按钮 - 从输入框解析Base64/Hex/PEM格式的CRL数据
+	parseBtn := buildButton("解析CRL", theme.ConfirmIcon(), func() {
+		inputData := strings.TrimSpace(input.Text)
+		if inputData == "" {
+			dialog.ShowError(fmt.Errorf("请输入CRL数据"), fyne.CurrentApp().Driver().AllWindows()[0])
+			return
+		}
+
+		// 尝试解析CRL数据
+		var decodeData []byte
+		var err error
+		var isPEMFormat bool
+
+		// 检查是否是PEM格式
+		trimmedInput := strings.TrimSpace(inputData)
+		if strings.HasPrefix(trimmedInput, "-----BEGIN X509 CRL-----") ||
+			strings.HasPrefix(trimmedInput, "-----BEGIN CRL-----") ||
+			strings.Contains(trimmedInput, "-----BEGIN") {
+			isPEMFormat = true
+			// 尝试处理PEM格式CRL
+			decodeData, err = parsePEMCRL(inputData)
+			if err != nil {
+				// PEM解析失败，回退到Base64/Hex解码
+				isPEMFormat = false
+			}
+		}
+
+		// 如果不是PEM格式，或者PEM解析失败，尝试Base64/Hex解码
+		if !isPEMFormat {
+			// 清理输入数据，移除空格和换行符
+			cleanedInput := cleanInputData(inputData)
+
+			// 尝试Base64解码
+			decodeData, err = base64.StdEncoding.DecodeString(cleanedInput)
+			if err != nil {
+				// 尝试URL-safe Base64
+				decodeData, err = base64.URLEncoding.DecodeString(cleanedInput)
+				if err != nil {
+					// 尝试添加填充后解码
+					cleanedWithPadding := addBase64Padding(cleanedInput)
+					decodeData, err = base64.StdEncoding.DecodeString(cleanedWithPadding)
+					if err != nil {
+						// 如果Base64失败，尝试Hex解码
+						decodeData, err = hex.DecodeString(cleanedInput)
+						if err != nil {
+							dialog.ShowError(fmt.Errorf("无法解码输入数据，请确保输入的是有效的Base64、Hex或PEM格式CRL数据\n\nBase64错误: %v\nHex错误: %v", err, err), fyne.CurrentApp().Driver().AllWindows()[0])
+							return
+						}
+					}
+				}
+			}
+		}
+
+		// 验证解码后的数据长度
+		if len(decodeData) < 50 {
+			dialog.ShowError(fmt.Errorf("解码后的数据太短（%d 字节），不像是有效的CRL数据", len(decodeData)), fyne.CurrentApp().Driver().AllWindows()[0])
+			return
+		}
+
+		// 解析CRL
+		crlInfo, err := helper.ParseCRL(decodeData)
+		if err != nil {
+			dialog.ShowError(fmt.Errorf("解析CRL失败: %v", err), fyne.CurrentApp().Driver().AllWindows()[0])
+			return
+		}
+
+		currentCRLInfo = crlInfo
+		// 显示CRL详情
+		displayCRLDetails(crlDetails, crlInfo)
+		crlDetails.Show()
+	})
 
 	// 文件选择按钮
 	selectFileBtn := buildButton("选择CRL文件", theme.FolderOpenIcon(), func() {
@@ -114,8 +189,8 @@ func CrlStructure(input *widget.Entry) *fyne.Container {
 		certSNInput.Refresh()
 	})
 
-	// 按钮布局 - 只保留文件选择按钮
-	buttonRow1 := container.New(layout.NewGridLayout(1), selectFileBtn)
+	// 按钮布局 - 添加解析按钮和文件选择按钮
+	buttonRow1 := container.New(layout.NewGridLayout(2), parseBtn, selectFileBtn)
 	buttonRow2 := container.New(layout.NewGridLayout(2), verifyBtn, clear)
 
 	// 组装界面 - 不添加全局输入框，它已经在主界面的固定位置
@@ -200,4 +275,28 @@ func displayVerificationResult(outputWidget *widget.Entry, serialNumber string, 
 	}
 
 	outputWidget.SetText(result)
+}
+
+// parsePEMCRL 解析PEM格式CRL
+func parsePEMCRL(pemData string) ([]byte, error) {
+	// 清理输入数据，移除多余的空格和换行
+	pemData = strings.TrimSpace(pemData)
+
+	// 解析PEM块
+	rest := []byte(pemData)
+	for len(rest) > 0 {
+		block, remaining := pem.Decode(rest)
+		if block == nil {
+			break
+		}
+
+		// 检查PEM块类型，支持CRL格式
+		if block.Type == "X509 CRL" || block.Type == "CRL" {
+			return block.Bytes, nil
+		}
+
+		rest = remaining
+	}
+
+	return nil, fmt.Errorf("未找到有效的CRL块")
 }

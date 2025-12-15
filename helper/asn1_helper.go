@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/zaneway/cain-go/sm2"
@@ -99,54 +100,128 @@ func parseAsn1WithDepth(data []byte, currentDepth, maxDepth int) ASN1Node {
 
 	_, err := asn1.Unmarshal(data, &node)
 	if err != nil {
-		thisNode.Error = fmt.Sprintf("ASN1解析错误: %v", err)
-		thisNode.Value = "解析错误"
+		// 检查是否是IA5String相关的错误，如果是则尝试手动解析
+		errStr := err.Error()
+		// 更宽松的错误检测：只要包含 "IA5String" 和 "invalid" 或 "syntax error" 就尝试手动解析
+		if strings.Contains(errStr, "IA5String") && (strings.Contains(errStr, "invalid") || strings.Contains(errStr, "syntax error")) {
+			// 尝试手动解析IA5String
+			manualNode, manualErr := parseIA5StringManually(data)
+			if manualErr == nil {
+				// 手动解析成功，使用手动解析的结果
+				thisNode.Tag = manualNode.Tag
+				thisNode.Class = manualNode.Class
+				thisNode.Length = manualNode.Length
+				thisNode.FullBytes = manualNode.FullBytes
+				thisNode.Content = manualNode.Content
+				// 添加警告信息，但不阻止解析
+				thisNode.Error = fmt.Sprintf("警告: IA5String包含非标准字符，已尝试解析")
+				// 继续处理，不返回
+			} else {
+				// 手动解析也失败，尝试更通用的手动解析
+				genericNode, genericErr := parseASN1Manually(data)
+				if genericErr == nil {
+					thisNode.Tag = genericNode.Tag
+					thisNode.Class = genericNode.Class
+					thisNode.Length = genericNode.Length
+					thisNode.FullBytes = genericNode.FullBytes
+					thisNode.Content = genericNode.Content
+					thisNode.Error = fmt.Sprintf("警告: ASN1解析遇到问题，已使用手动解析 (原始错误: %v)", err)
+				} else {
+					// 所有手动解析都失败，返回错误
+					thisNode.Error = fmt.Sprintf("ASN1解析错误: %v (手动解析也失败: %v)", err, manualErr)
+					thisNode.Value = "解析错误"
+					return thisNode
+				}
+			}
+		} else {
+			// 其他类型的错误，也尝试通用手动解析
+			genericNode, genericErr := parseASN1Manually(data)
+			if genericErr == nil {
+				thisNode.Tag = genericNode.Tag
+				thisNode.Class = genericNode.Class
+				thisNode.Length = genericNode.Length
+				thisNode.FullBytes = genericNode.FullBytes
+				thisNode.Content = genericNode.Content
+				thisNode.Error = fmt.Sprintf("警告: ASN1解析遇到问题，已使用手动解析 (原始错误: %v)", err)
+			} else {
+				// 手动解析也失败，返回错误
+				thisNode.Error = fmt.Sprintf("ASN1解析错误: %v", err)
+				thisNode.Value = "解析错误"
+				return thisNode
+			}
+		}
+	} else {
+		// 正常解析成功
+		// 设置基本属性
+		thisNode.Tag = node.Tag
+		if node.IsCompound {
+			thisNode.Tag = node.Tag + 32
+		}
+		thisNode.Tag += ClassToNum[node.Class]
+		thisNode.Class = node.Class
+		thisNode.Length = len(node.FullBytes)
+		thisNode.FullBytes = node.FullBytes
+
+		// 处理复合类型
+		if node.IsCompound || isCompoundSafe(node) {
+			thisNodeValue := node.Bytes
+			childCount := 0
+			maxChildren := 1000 // 限制子节点数量
+
+			for len(thisNodeValue) > 0 && childCount < maxChildren {
+				// 安全的子节点解析
+				childNode := parseAsn1WithDepth(thisNodeValue, currentDepth+1, maxDepth)
+
+				// 如果子节点解析失败，停止继续解析
+				if childNode.Error != "" {
+					break
+				}
+
+				thisNode.Children = append(thisNode.Children, &childNode)
+				childCount++
+
+				// 防止无限循环
+				if childNode.Length <= 0 || childNode.Length > len(thisNodeValue) {
+					break
+				}
+
+				thisNodeValue = thisNodeValue[childNode.Length:]
+
+			}
+
+			if childCount >= maxChildren {
+				thisNode.Error = fmt.Sprintf("子节点过多，已截断（显示前%d个）", maxChildren)
+			}
+
+		} else {
+			thisNode.Content = node.Bytes
+		}
+
+		// 构建显示值
+		thisNode.Value = buildAsn1ValueSafe(thisNode)
 		return thisNode
 	}
 
-	// 设置基本属性
-	thisNode.Tag = node.Tag
-	if node.IsCompound {
-		thisNode.Tag = node.Tag + 32
-	}
-	thisNode.Tag += ClassToNum[node.Class]
-	thisNode.Class = node.Class
-	thisNode.Length = len(node.FullBytes)
-	thisNode.FullBytes = node.FullBytes
-
-	// 处理复合类型
-	if node.IsCompound || isCompoundSafe(node) {
-		thisNodeValue := node.Bytes
+	// 手动解析路径：处理复合类型
+	if thisNode.Tag >= 32 && thisNode.Tag < 64 || thisNode.Tag >= 96 && thisNode.Tag < 128 ||
+		thisNode.Tag >= 160 && thisNode.Tag < 192 || thisNode.Tag >= 224 && thisNode.Tag < 256 {
+		// 可能是复合类型，尝试解析子节点
+		thisNodeValue := thisNode.Content
 		childCount := 0
-		maxChildren := 1000 // 限制子节点数量
+		maxChildren := 1000
 
 		for len(thisNodeValue) > 0 && childCount < maxChildren {
-			// 安全的子节点解析
 			childNode := parseAsn1WithDepth(thisNodeValue, currentDepth+1, maxDepth)
-
-			// 如果子节点解析失败，停止继续解析
 			if childNode.Error != "" {
 				break
 			}
-
 			thisNode.Children = append(thisNode.Children, &childNode)
 			childCount++
-
-			// 防止无限循环
 			if childNode.Length <= 0 || childNode.Length > len(thisNodeValue) {
 				break
 			}
-
 			thisNodeValue = thisNodeValue[childNode.Length:]
-
 		}
-
-		if childCount >= maxChildren {
-			thisNode.Error = fmt.Sprintf("子节点过多，已截断（显示前%d个）", maxChildren)
-		}
-
-	} else {
-		thisNode.Content = node.Bytes
 	}
 
 	// 构建显示值
@@ -170,6 +245,38 @@ func isCompoundSafe(node asn1.RawValue) bool {
 	return err == nil
 }
 
+// getOriginalTag 从修改后的tag中提取原始tag值
+func getOriginalTag(tag int) int {
+	// 根据tag的范围提取原始tag值
+	if tag < 32 {
+		// Universal Simple (0-31)
+		return tag
+	} else if 32 <= tag && tag < 64 {
+		// Universal Structure (32-63)
+		return tag - 32
+	} else if 64 <= tag && tag < 96 {
+		// Application Simple (64-95)
+		return tag - 64
+	} else if 96 <= tag && tag < 128 {
+		// Application Structure (96-127)
+		return tag - 96
+	} else if 128 <= tag && tag < 160 {
+		// Context Specific Simple (128-159)
+		return tag - 128
+	} else if 160 <= tag && tag < 192 {
+		// Context Specific Structure (160-191)
+		return tag - 160
+	} else if 192 <= tag && tag < 224 {
+		// Private Simple (192-223)
+		return tag - 192
+	} else if 224 <= tag && tag < 256 {
+		// Private Structure (224-255)
+		return tag - 224
+	}
+	// 如果超出范围，返回原值
+	return tag
+}
+
 // buildAsn1ValueSafe 安全的ASN1值构建函数
 func buildAsn1ValueSafe(node ASN1Node) (data string) {
 	// 如果有错误，返回错误信息
@@ -191,8 +298,11 @@ func buildAsn1ValueSafe(node ASN1Node) (data string) {
 	// 默认显示Hex编码
 	data = hex.EncodeToString(node.Content)
 
+	// 提取原始tag值用于匹配
+	originalTag := getOriginalTag(node.Tag)
+
 	// 根据标签类型特殊处理
-	switch node.Tag {
+	switch originalTag {
 	case 2: // INTEGER
 		if bigInt, err := parseBigIntSafe(node.Content); err == nil {
 			data = bigInt.String()
@@ -230,10 +340,39 @@ func buildAsn1ValueSafe(node ASN1Node) (data string) {
 			}
 		}
 	case 22: // IA5String
+		// 即使包含非标准字符，也尝试显示为字符串
+		// 这样可以显示那些不符合IA5String标准但实际存在的内容
 		if isIA5String(node.Content) {
+			// 标准IA5String，直接显示
 			data = string(node.Content)
 			if len(data) > 500 {
 				data = data[:500] + "...已截断"
+			}
+		} else {
+			// 包含非标准字符，尝试显示但添加警告
+			// 过滤掉控制字符，保留可打印字符
+			var sb strings.Builder
+			nonPrintableCount := 0
+			for _, b := range node.Content {
+				if b >= 32 && b < 127 {
+					sb.WriteByte(b)
+				} else if b == 9 || b == 10 || b == 13 {
+					// 允许制表符、换行符、回车符
+					sb.WriteByte(b)
+				} else {
+					nonPrintableCount++
+					// 对于非打印字符，显示为转义序列
+					sb.WriteString(fmt.Sprintf("\\x%02x", b))
+				}
+			}
+			result := sb.String()
+			if len(result) > 500 {
+				result = result[:500] + "...已截断"
+			}
+			if nonPrintableCount > 0 {
+				data = fmt.Sprintf("[警告: 包含%d个非标准字符] %s", nonPrintableCount, result)
+			} else {
+				data = result
 			}
 		}
 	case 23: // UTCTime
@@ -497,4 +636,112 @@ func parseBitString(bytes []byte) (ret asn1.BitString, err error) {
 	ret.BitLength = (len(bytes)-1)*8 - paddingBits
 	ret.Bytes = bytes[1:]
 	return
+}
+
+// ManualASN1Node 手动解析的ASN1节点结构
+type ManualASN1Node struct {
+	Tag       int
+	Class     int
+	Length    int
+	FullBytes []byte
+	Content   []byte
+}
+
+// parseASN1Manually 通用的手动解析ASN1结构，绕过标准库的严格验证
+func parseASN1Manually(data []byte) (*ManualASN1Node, error) {
+	if len(data) < 2 {
+		return nil, fmt.Errorf("数据太短")
+	}
+
+	var node ManualASN1Node
+	pos := 0
+
+	// 解析tag和class
+	tagByte := data[pos]
+	pos++
+
+	// 提取class (前2位)
+	node.Class = int((tagByte >> 6) & 0x03)
+
+	// 检查是否是复合类型 (第6位)
+	isCompound := (tagByte & 0x20) != 0
+
+	// 提取tag值
+	if (tagByte & 0x1F) == 0x1F {
+		// 长格式tag（多字节），这里简化处理
+		return nil, fmt.Errorf("不支持长格式tag")
+	}
+	node.Tag = int(tagByte & 0x1F)
+
+	// 如果是复合类型，添加32
+	if isCompound {
+		node.Tag += 32
+	}
+
+	// 添加class偏移
+	node.Tag += ClassToNum[node.Class]
+
+	// 解析长度
+	if pos >= len(data) {
+		return nil, fmt.Errorf("数据不足，无法解析长度")
+	}
+
+	lengthByte := data[pos]
+	pos++
+
+	var contentLength int
+	var lengthBytes int
+
+	if (lengthByte & 0x80) == 0 {
+		// 短格式长度
+		contentLength = int(lengthByte)
+		lengthBytes = 1
+	} else {
+		// 长格式长度
+		lengthBytesCount := int(lengthByte & 0x7F)
+		if lengthBytesCount == 0 || lengthBytesCount > 4 {
+			return nil, fmt.Errorf("长度字段格式错误")
+		}
+
+		if pos+lengthBytesCount > len(data) {
+			return nil, fmt.Errorf("数据不足，无法读取长度字段")
+		}
+
+		contentLength = 0
+		for i := 0; i < lengthBytesCount; i++ {
+			contentLength = (contentLength << 8) | int(data[pos])
+			pos++
+		}
+		lengthBytes = 1 + lengthBytesCount
+	}
+
+	// 计算总长度
+	totalLength := 1 + lengthBytes + contentLength
+
+	// 检查数据是否足够
+	if pos+contentLength > len(data) {
+		// 如果数据不足，使用实际可用数据
+		contentLength = len(data) - pos
+		totalLength = pos + contentLength
+	}
+
+	// 提取完整字节
+	node.FullBytes = data[:totalLength]
+
+	// 提取内容
+	if pos+contentLength <= len(data) {
+		node.Content = data[pos : pos+contentLength]
+	} else {
+		node.Content = data[pos:]
+	}
+
+	node.Length = totalLength
+
+	return &node, nil
+}
+
+// parseIA5StringManually 手动解析IA5String，绕过标准库的严格验证
+// 实际上调用通用的parseASN1Manually函数
+func parseIA5StringManually(data []byte) (*ManualASN1Node, error) {
+	return parseASN1Manually(data)
 }
