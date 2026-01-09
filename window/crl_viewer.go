@@ -216,6 +216,7 @@ func CrlStructure(input *widget.Entry) *fyne.Container {
 func displayCRLDetails(detailsWidget *widget.Entry, crlInfo *helper.CRLInfo) {
 	details := fmt.Sprintf(`CRL详细信息:
 `+
+		//手动换行
 		`颁发者: %s
 `+
 		`本次更新时间: %s
@@ -226,7 +227,8 @@ func displayCRLDetails(detailsWidget *widget.Entry, crlInfo *helper.CRLInfo) {
 `+
 		`被吊销证书总数: %d
 `+
-		`\n被吊销证书列表:\n`,
+		`被吊销证书列表:
+`,
 		crlInfo.Issuer,
 		crlInfo.ThisUpdate.Format("2006-01-02 15:04:05"),
 		crlInfo.NextUpdate.Format("2006-01-02 15:04:05"),
