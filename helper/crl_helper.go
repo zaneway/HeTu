@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"HeTu/util"
 	"crypto/x509/pkix"
 	"encoding/hex"
 	"fmt"
@@ -47,8 +48,8 @@ func ParseCRL(data []byte) (*CRLInfo, error) {
 
 	crlInfo := &CRLInfo{
 		Issuer:             crl.TBSCertList.Issuer.String(),
-		ThisUpdate:         crl.TBSCertList.ThisUpdate,
-		NextUpdate:         crl.TBSCertList.NextUpdate,
+		ThisUpdate:         util.ToBeijingTime(crl.TBSCertList.ThisUpdate),
+		NextUpdate:         util.ToBeijingTime(crl.TBSCertList.NextUpdate),
 		TotalRevoked:       len(crl.TBSCertList.RevokedCertificates),
 		SignatureAlgorithm: formatSignatureAlgorithm(crl.SignatureAlgorithm),
 	}
@@ -57,7 +58,7 @@ func ParseCRL(data []byte) (*CRLInfo, error) {
 	for _, revoked := range crl.TBSCertList.RevokedCertificates {
 		revokedCert := RevokedCertificate{
 			SerialNumber:   hex.EncodeToString(revoked.SerialNumber.Bytes()),
-			RevocationTime: revoked.RevocationTime,
+			RevocationTime: util.ToBeijingTime(revoked.RevocationTime),
 			Reason:         parseRevocationReason(revoked.Extensions),
 		}
 		crlInfo.RevokedCerts = append(crlInfo.RevokedCerts, revokedCert)

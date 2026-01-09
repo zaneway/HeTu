@@ -201,9 +201,9 @@ func buildCertificateDetail(certificate *Certificate) (keys []string, certDetail
 	//IssueName
 	certDetail[keys[2]] = certificate.Issuer.String()
 	//NotBefore
-	certDetail[keys[3]] = certificate.NotBefore.String()
+	certDetail[keys[3]] = util.ToBeijingTime(certificate.NotBefore).String()
 	//NotAfter
-	certDetail[keys[4]] = certificate.NotAfter.String()
+	certDetail[keys[4]] = util.ToBeijingTime(certificate.NotAfter).String()
 	//PublicKeyAlgorithm
 	certDetail[keys[5]] = base64.StdEncoding.EncodeToString(certificate.RawSubjectPublicKeyInfo)
 	//PublicKey Alg
