@@ -133,7 +133,7 @@ create_nsis_script() {
 
 ; 安装包基本信息
 !define APP_NAME "HeTu"
-!define APP_VERSION "1.0.0"
+!define APP_VERSION "1.0.8"
 !define APP_PUBLISHER "HeTu Development Team"
 !define APP_URL "https://github.com/zaneway/HeTu"
 !define APP_DESCRIPTION "河图密码学工具箱 - 可视化密码学操作平台"
