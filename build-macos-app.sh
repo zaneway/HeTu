@@ -66,7 +66,7 @@ cleanup_old_files() {
     
     # 删除旧的dmg文件
     if [ -f "$project_name.dmg" ]; then
-        print_info "删除旧的DMG文件: $project_name.dmg"
+        print_info "删除旧的DMG文件: $APP_NAME*.dmg"
         rm -f "$project_name.dmg"
     fi
     

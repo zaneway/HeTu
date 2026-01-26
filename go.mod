@@ -4,6 +4,7 @@ go 1.23.12
 
 require (
 	fyne.io/fyne/v2 v2.7.0
+	github.com/corvus-ch/shamir v1.0.1
 	github.com/lengzhao/font v0.1.0
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/zaneway/cain-go v1.0.0-M5
@@ -19,7 +20,6 @@ require (
 	fyne.io/systray v1.11.1-0.20250603113521-ca66a66d8b58 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/ConradIrwin/font v0.0.0-20210318200717-ce8d41cc0732 // indirect
-	github.com/corvus-ch/shamir v1.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/flopp/go-findfont v0.1.0 // indirect
