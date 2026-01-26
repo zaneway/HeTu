@@ -29,6 +29,7 @@ const (
 	CrlTab         = "📜 CRL列表"
 	FormatTab      = "📄 JSON/XML"
 	TOTP           = "📄 TOTP"
+	ShamirTab      = "🧩 Shamir"
 )
 
 // 全局历史记录管理器引用
@@ -193,6 +194,7 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 		P7bTab:         "📝 请输入 Base64/Hex 格式的 P7B 证书链数据，或拖拽P7B文件到此处...",
 		CrlTab:         "📝 请输入 Base64/Hex 格式的 CRL 数据，或拖拽CRL文件到此处...",
 		FormatTab:      "📝 请输入 JSON 或 XML 数据进行格式化，或拖拽文件到此处...",
+		ShamirTab:      "📝 请输入要拆分的秘密数据...",
 	}
 
 	// 创建历史记录下拉框
@@ -311,6 +313,7 @@ func createMultiRowTabs(sharedInput *widget.Entry, placeholders map[string]strin
 		{CrlTab, theme.AccountIcon(), func() *fyne.Container { return CrlStructure(sharedInput) }},
 		{FormatTab, theme.DocumentIcon(), func() *fyne.Container { return FormatStructure(sharedInput) }},
 		{TOTP, theme.DocumentIcon(), func() *fyne.Container { return OTPStructure(sharedInput) }},
+		{ShamirTab, theme.VisibilityIcon(), func() *fyne.Container { return ShamirStructure(sharedInput) }},
 	}
 
 	// 创建内容容器
