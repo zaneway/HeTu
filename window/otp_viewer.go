@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/zaneway/otp/totp"
 	"strings"
+	"time"
 )
 
 // FormatStructure 构造JSON/XML格式化核心图形模块
@@ -18,6 +19,7 @@ func OTPStructure(input *widget.Entry) *fyne.Container {
 
 	structure := container.NewVBox()
 	detail := container.NewVBox()
+	var stopChan chan struct{}
 
 	// 创建状态标签和进度条
 	statusLabel := widget.NewLabel("准备生成OTP")
@@ -36,47 +38,87 @@ func OTPStructure(input *widget.Entry) *fyne.Container {
 			}
 		}
 
-		// 清除旧内容并显示进度
+		// 停止之前的倒计时
+		if stopChan != nil {
+			close(stopChan)
+		}
+		stopChan = make(chan struct{})
+		currentStopChan := stopChan
+
+		// 清除旧内容
 		detail.RemoveAll()
-		statusLabel.SetText("正在检查数据类型...")
-		progressBar.Show()
-		progressBar.SetValue(0.1)
-		detail.Add(statusLabel)
-		detail.Add(progressBar)
+
+		// OTP显示组件
+		otpLabel := widget.NewLabel("")
+		otpLabel.TextStyle = fyne.TextStyle{Bold: true}
+		otpLabel.Alignment = fyne.TextAlignCenter
+
+		// 复制按钮
+		copyBtn := widget.NewButtonWithIcon("", theme.ContentCopyIcon(), func() {
+			if otpLabel.Text != "" && !strings.HasPrefix(otpLabel.Text, "Error") {
+				win := fyne.CurrentApp().Driver().AllWindows()[0]
+				win.Clipboard().SetContent(otpLabel.Text)
+			}
+		})
+
+		otpContainer := container.NewBorder(nil, nil, nil, copyBtn, otpLabel)
+
+		// 倒计时标签
+		countDownLabel := widget.NewLabel("")
+		countDownLabel.Alignment = fyne.TextAlignCenter
+
+		// 倒计时进度条
+		timerBar := widget.NewProgressBar()
+		timerBar.Min = 0
+		timerBar.Max = 30
+		timerBar.TextFormatter = func() string { return "" }
+
+		// 布局
+		content := container.NewVBox(
+			layout.NewSpacer(),
+			//widget.NewLabelWithStyle("OTP Code:", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
+			otpContainer,
+			layout.NewSpacer(),
+			countDownLabel,
+			timerBar,
+			layout.NewSpacer(),
+		)
+
+		detail.Add(content)
 		detail.Refresh()
 
 		// 在后台 goroutine 中执行操作
 		go func() {
+			ticker := time.NewTicker(1 * time.Second)
+			defer ticker.Stop()
 
-			// 更新UI显示结果
-			fyne.Do(func() {
-				statusLabel.SetText("正在显示结果...")
-				progressBar.SetValue(0.9)
+			updateFunc := func() {
 				otp, err := totp.Generate(inputData, 30)
-				if err != nil {
+				now := time.Now().Unix()
+				remaining := 30 - (now % 30)
+
+				fyne.Do(func() {
+					if err != nil {
+						otpLabel.SetText("Error: " + err.Error())
+					} else {
+						otpLabel.SetText(otp)
+					}
+					countDownLabel.SetText(fmt.Sprintf("更新倒计时: %d 秒", remaining))
+					timerBar.SetValue(float64(remaining))
+				})
+			}
+
+			// 立即执行一次
+			updateFunc()
+
+			for {
+				select {
+				case <-currentStopChan:
 					return
+				case <-ticker.C:
+					updateFunc()
 				}
-				// 显示格式化后的数据
-				resultEntry := widget.NewMultiLineEntry()
-				resultEntry.Wrapping = fyne.TextWrapWord
-				resultEntry.SetText(otp)
-
-				// 固定可见行数为15行，取消自动调整
-				resultEntry.SetMinRowsVisible(15)
-
-				// 将结果框包装在滚动容器中以确保滚动功能
-				resultScroll := container.NewScroll(resultEntry)
-				resultScroll.SetMinSize(fyne.NewSize(0, 300)) // 固定高度300像素
-
-				// 添加标签
-
-				// 清除进度条，显示结果
-				detail.RemoveAll()
-				detail.Add(resultScroll)
-
-				progressBar.Hide()
-				detail.Refresh()
-			})
+			}
 		}()
 	}
 
@@ -93,6 +135,10 @@ func OTPStructure(input *widget.Entry) *fyne.Container {
 
 	// 清除按钮
 	clear := widget.NewButtonWithIcon("清除", theme.CancelIcon(), func() {
+		if stopChan != nil {
+			close(stopChan)
+			stopChan = nil
+		}
 		input.Text = ""
 		input.Refresh()
 		detail.RemoveAll()
