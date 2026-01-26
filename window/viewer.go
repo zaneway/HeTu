@@ -28,6 +28,7 @@ const (
 	P7bTab         = "🔗 P7B证书链"
 	CrlTab         = "📜 CRL列表"
 	FormatTab      = "📄 JSON/XML"
+	TOTP           = "📄 TOTP"
 )
 
 // 全局历史记录管理器引用
@@ -272,7 +273,7 @@ func createMainContent(sharedInput *widget.Entry) *fyne.Container {
 // 创建底部状态栏
 func createFooter() *fyne.Container {
 	// 版本信息
-	versionLabel := widget.NewLabel("v1.0.7")
+	versionLabel := widget.NewLabel("v1.0.6")
 	versionLabel.TextStyle = fyne.TextStyle{Italic: true}
 
 	// 状态信息
@@ -309,6 +310,7 @@ func createMultiRowTabs(sharedInput *widget.Entry, placeholders map[string]strin
 		{P7bTab, theme.InfoIcon(), func() *fyne.Container { return P7bStructure(sharedInput) }},
 		{CrlTab, theme.AccountIcon(), func() *fyne.Container { return CrlStructure(sharedInput) }},
 		{FormatTab, theme.DocumentIcon(), func() *fyne.Container { return FormatStructure(sharedInput) }},
+		{TOTP, theme.DocumentIcon(), func() *fyne.Container { return OTPStructure(sharedInput) }},
 	}
 
 	// 创建内容容器

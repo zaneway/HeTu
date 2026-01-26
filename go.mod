@@ -1,12 +1,13 @@
 module HeTu
 
-go 1.20
+go 1.23.12
 
 require (
 	fyne.io/fyne/v2 v2.7.0
 	github.com/lengzhao/font v0.1.0
 	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/zaneway/cain-go v1.0.0-M5
+	github.com/zaneway/otp v1.0.2
 )
 
 replace github.com/davecgh/go-spew v1.1.1 => github.com/davecgh/go-spew v1.1.0
