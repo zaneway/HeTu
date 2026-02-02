@@ -30,11 +30,11 @@ func OTPStructure(input *widget.Entry) *fyne.Container {
 	performFormatting := func(inputData string, detail *fyne.Container, statusLabel *widget.Label, progressBar *widget.ProgressBar) {
 		// 保存到历史记录
 		if inputData != "" {
-			util.GetHistoryDB().AddHistory("📄 Secret", inputData)
+			util.GetHistoryDB().AddHistory("📄 TOTP", inputData)
 
 			// 刷新历史记录下拉框
 			if historyManager := GetGlobalHistoryManager(); historyManager != nil {
-				historyManager.LoadHistoryForTab("📄 Secret")
+				historyManager.LoadHistoryForTab("📄 TOTP")
 			}
 		}
 
