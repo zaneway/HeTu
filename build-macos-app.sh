@@ -156,7 +156,7 @@ build_app() {
     fi
     
     # 执行fyne打包
-    fyne package -os darwin $icon_param -name "$APP_NAME" -sourceDir . -appID "$APP_BUNDLE_ID" -appVersion "$APP_VERSION"
+    fyne package -os darwin $icon_param -name "$APP_NAME" --source-dir . --app-id "$APP_BUNDLE_ID" --app-version "$APP_VERSION"
     
     if [ $? -eq 0 ] && [ -d "$APP_NAME.app" ]; then
         print_success "应用打包完成: $APP_NAME.app"
