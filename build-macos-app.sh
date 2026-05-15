@@ -4,6 +4,9 @@
 
 set -e  # 遇到错误立即退出
 
+# 添加 GOPATH/bin 到 PATH
+export PATH="$PATH:$(go env GOPATH)/bin"
+
 # 颜色输出函数
 print_info() {
     echo -e "\033[36m[INFO]\033[0m $1"
@@ -156,7 +159,7 @@ build_app() {
     fi
     
     # 执行fyne打包
-    fyne package -os darwin $icon_param -name "$APP_NAME" --source-dir . --app-id "$APP_BUNDLE_ID" --app-version "$APP_VERSION"
+    fyne package -os darwin $icon_param -name "$APP_NAME" --src . --appID "$APP_BUNDLE_ID" --appVersion "$APP_VERSION"
     
     if [ $? -eq 0 ] && [ -d "$APP_NAME.app" ]; then
         print_success "应用打包完成: $APP_NAME.app"
