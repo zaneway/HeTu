@@ -1227,10 +1227,40 @@ func showCertificateDetail(orderKeys []string, certDetail map[string]string, box
 			text := certDetail[key.Text]
 			value.SetText(text)
 		}
+
 		realKey := container.New(layout.NewGridWrapLayout(fyne.Size{150, 30}), key)
-		realValue := container.NewStack(value)
-		line := container.New(layout.NewFormLayout(), realKey, realValue)
-		box.Add(line)
+
+		// SerialNumber 需要添加切换大小写按钮
+		if orderKey == "SerialNumber" {
+			isUpper := true
+			skipOnChanged := false
+			toggleBtn := widget.NewButton("切换大小写", func() {
+				skipOnChanged = true
+				if isUpper {
+					value.SetText(strings.ToUpper(value.Text))
+					isUpper = false
+				} else {
+					value.SetText(strings.ToLower(value.Text))
+					isUpper = true
+				}
+			})
+			//防止值被修改，但切换大小写时跳过
+			value.OnChanged = func(s string) {
+				if skipOnChanged {
+					skipOnChanged = false
+					return
+				}
+				text := certDetail[key.Text]
+				value.SetText(text)
+			}
+			valueContainer := container.NewVBox(value, toggleBtn)
+			line := container.New(layout.NewFormLayout(), realKey, valueContainer)
+			box.Add(line)
+		} else {
+			realValue := container.NewStack(value)
+			line := container.New(layout.NewFormLayout(), realKey, realValue)
+			box.Add(line)
+		}
 	}
 	box.Refresh()
 }
